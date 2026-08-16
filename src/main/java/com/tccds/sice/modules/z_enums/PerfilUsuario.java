@@ -1,4 +1,4 @@
-package com.tccds.sice.modules.z_shared.enums;
+package com.tccds.sice.modules.z_enums;
 
 public enum PerfilUsuario {
     ALUNO,

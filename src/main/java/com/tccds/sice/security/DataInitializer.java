@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import com.tccds.sice.modules.credencial.Credencial;
 import com.tccds.sice.modules.usuario.Usuario;
 import com.tccds.sice.modules.usuario.UsuarioRepository;
-import com.tccds.sice.modules.z_shared.enums.PerfilUsuario;
+import com.tccds.sice.modules.z_enums.PerfilUsuario;
 
 import lombok.RequiredArgsConstructor;
 

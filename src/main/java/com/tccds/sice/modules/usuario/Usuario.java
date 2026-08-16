@@ -1,7 +1,7 @@
 package com.tccds.sice.modules.usuario;
 
 import com.tccds.sice.modules.credencial.Credencial;
-import com.tccds.sice.modules.z_shared.enums.PerfilUsuario;
+import com.tccds.sice.modules.z_enums.PerfilUsuario;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;

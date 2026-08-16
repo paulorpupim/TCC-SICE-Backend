@@ -7,10 +7,12 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.tccds.sice.modules.usuario.Usuario;
-import com.tccds.sice.modules.z_shared.enums.PerfilUsuario;
-import com.tccds.sice.modules.z_shared.enums.Serie;
+import com.tccds.sice.modules.z_enums.PerfilUsuario;
+import com.tccds.sice.modules.z_enums.Serie;
+import com.tccds.sice.modules.z_enums.StatusEvento;
 
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -77,7 +79,7 @@ public class Evento {
     @UpdateTimestamp
     private LocalDateTime atualizadoEm;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "criado_por_id", nullable = false)
     private Usuario criadoPor;
 

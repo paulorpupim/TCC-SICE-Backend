@@ -1,4 +1,4 @@
-package com.tccds.sice.modules.usuario;
+package com.tccds.sice.modules.evento;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -8,29 +8,30 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.tccds.sice.modules.usuario.dto.CriarUsuarioDTO;
-import com.tccds.sice.modules.usuario.dto.UsuarioResponseDTO;
+import com.tccds.sice.modules.evento.dto.CriarEventoDTO;
+import com.tccds.sice.modules.evento.dto.EventoResponseDTO;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/usuarios")
+@RequestMapping("/eventos")
 @RequiredArgsConstructor
-public class UsuarioController {
+public class EventoController {
+    
+    private final EventoService eventoService;
 
-    private final UsuarioService usuarioService;
+    @PostMapping("/cadastrarEvento")
+    @PreAuthorize("hasAnyRole('SECRETARIA', 'ADMIN')")
+    public ResponseEntity<EventoResponseDTO> criar(
+        @Valid @RequestBody CriarEventoDTO dto){
 
-    @PostMapping("/cadastrarUsuario")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UsuarioResponseDTO> criar(@Valid @RequestBody CriarUsuarioDTO dto){
-
-        UsuarioResponseDTO usuario = usuarioService.criar(dto);
+        EventoResponseDTO evento = eventoService.criar(dto);
 
         return ResponseEntity
             .status(HttpStatus.CREATED)
-            .body(usuario);
+            .body(evento);
 
-    }
-    
+    } 
+
 }

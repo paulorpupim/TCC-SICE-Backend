@@ -1,8 +1,9 @@
 package com.tccds.sice.modules.aluno;
 
 import com.tccds.sice.modules.usuario.Usuario;
-import com.tccds.sice.modules.z_shared.enums.Serie;
+import com.tccds.sice.modules.z_enums.Serie;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -34,7 +35,7 @@ public class Aluno {
     private Usuario usuario;
 
     @Enumerated(EnumType.STRING)
-    @JoinColumn(nullable = false)
+    @Column(nullable = false)
     private Serie serie;
 
 }

@@ -7,8 +7,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.tccds.sice.modules.aluno.Aluno;
 import com.tccds.sice.modules.aluno.AlunoRepository;
 import com.tccds.sice.modules.credencial.Credencial;
-import com.tccds.sice.modules.usuario.dto.criarUsuarioDTO;
-import com.tccds.sice.modules.z_shared.enums.PerfilUsuario;
+import com.tccds.sice.modules.usuario.dto.CriarUsuarioDTO;
+import com.tccds.sice.modules.usuario.dto.UsuarioResponseDTO;
+import com.tccds.sice.modules.z_enums.PerfilUsuario;
+import com.tccds.sice.modules.z_enums.Serie;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,7 +23,7 @@ public class UsuarioService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public Usuario criar(criarUsuarioDTO dto){
+    public UsuarioResponseDTO criar(CriarUsuarioDTO dto){
 
         Credencial credencial = new Credencial();
 
@@ -37,6 +39,9 @@ public class UsuarioService {
         usuario.setPerfil(dto.perfil());
         usuario.setCredencial(credencial);
 
+        Usuario usuarioSalvo = usuarioRepository.save(usuario);
+        Serie serie = null;
+
         if(dto.perfil() == PerfilUsuario.ALUNO){
 
             Aluno aluno = new Aluno();
@@ -46,9 +51,18 @@ public class UsuarioService {
 
             alunoRepository.save(aluno);
 
+            serie = aluno.getSerie();
+
         }
 
-        return usuarioRepository.save(usuario);
+        return new UsuarioResponseDTO(
+            usuarioSalvo.getId(),
+            usuarioSalvo.getNome(),
+            usuarioSalvo.getEmail(),
+            usuarioSalvo.getPerfil(),
+            serie,
+            usuarioSalvo.getCredencial().getIdentificador()
+        );
 
     }
 
