@@ -6,7 +6,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -14,7 +13,6 @@ import lombok.Setter;
 @Table(name = "tb_credencial")
 @Setter
 @Getter
-@AllArgsConstructor
 @NoArgsConstructor
 public class Credencial {
     
@@ -32,5 +30,12 @@ public class Credencial {
     private boolean primeiroAcesso;
 
     private boolean ativo;
+
+    public Credencial(String identificador, String senha, boolean primeiroAcesso, boolean ativo){
+        this.identificador = identificador;
+        this.senhaHash = senha;
+        this.primeiroAcesso = primeiroAcesso;
+        this.ativo = ativo;
+    }
 
 }

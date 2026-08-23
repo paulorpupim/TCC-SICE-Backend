@@ -1,7 +1,8 @@
 package com.tccds.sice.modules.usuario.dto;
 
-import com.tccds.sice.modules.z_enums.PerfilUsuario;
-import com.tccds.sice.modules.z_enums.Serie;
+import java.util.Set;
+
+import com.tccds.sice.enums.PerfilUsuario;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -25,7 +26,7 @@ public record CriarUsuarioDTO(
         @NotNull
         PerfilUsuario perfil,
 
-        @NotNull
-        Serie serie) {
+        Set<Long> turmasIds
+) {
 
 }

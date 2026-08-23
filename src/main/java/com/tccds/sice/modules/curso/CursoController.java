@@ -1,4 +1,4 @@
-package com.tccds.sice.modules.usuario;
+package com.tccds.sice.modules.curso;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -8,31 +8,31 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.tccds.sice.modules.usuario.dto.CriarUsuarioDTO;
-import com.tccds.sice.modules.usuario.dto.UsuarioResponseDTO;
+import com.tccds.sice.modules.curso.dto.CriarCursoDTO;
+import com.tccds.sice.modules.curso.dto.CursoResponseDTO;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/usuarios")
+@RequestMapping("/cursos")
 @RequiredArgsConstructor
-public class UsuarioController {
-
-    private final UsuarioService usuarioService;
-
-    @PostMapping("/cadastrarUsuario")
+public class CursoController {
+    
+    private final CursoService cursoService;
+    
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UsuarioResponseDTO> cadastrar(
-        @Valid @RequestBody CriarUsuarioDTO dto
+    @PostMapping("/cadastrarCurso")
+    public ResponseEntity<CursoResponseDTO> cadastrar(
+        @Valid @RequestBody CriarCursoDTO dto
     ){
-
-        UsuarioResponseDTO usuario = usuarioService.criar(dto);
+          
+        CursoResponseDTO curso = cursoService.criar(dto);
 
         return ResponseEntity
-            .status(HttpStatus.CREATED)
-            .body(usuario);
+                .status(HttpStatus.CREATED)
+                .body(curso);
 
     }
-    
+
 }

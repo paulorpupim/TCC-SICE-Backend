@@ -1,7 +1,7 @@
 package com.tccds.sice.modules.usuario;
 
+import com.tccds.sice.enums.PerfilUsuario;
 import com.tccds.sice.modules.credencial.Credencial;
-import com.tccds.sice.modules.z_enums.PerfilUsuario;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -14,7 +14,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -23,7 +22,6 @@ import lombok.Setter;
 @Table(name = "tb_usuario")
 @Setter
 @Getter
-@AllArgsConstructor
 @NoArgsConstructor
 public class Usuario {
 
@@ -43,5 +41,12 @@ public class Usuario {
     @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE })
     @JoinColumn(name = "credencial_id", nullable = false, unique = true)
     private Credencial credencial;
+
+    public Usuario(String nome, String email, PerfilUsuario perfil, Credencial credencial){
+        this.nome = nome;
+        this.email = email;
+        this.perfil = perfil;
+        this.credencial = credencial;
+    }
 
 }

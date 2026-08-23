@@ -1,16 +1,21 @@
 package com.tccds.sice.modules.usuario;
 
-import org.springframework.security.crypto.password.PasswordEncoder;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.tccds.sice.enums.PerfilUsuario;
 import com.tccds.sice.modules.aluno.Aluno;
-import com.tccds.sice.modules.aluno.AlunoRepository;
+import com.tccds.sice.modules.aluno.AlunoService;
+import com.tccds.sice.modules.aluno.matricula.MatriculaService;
 import com.tccds.sice.modules.credencial.Credencial;
+import com.tccds.sice.modules.credencial.CredencialService;
+import com.tccds.sice.modules.turma.Turma;
+import com.tccds.sice.modules.turma.TurmaService;
 import com.tccds.sice.modules.usuario.dto.CriarUsuarioDTO;
 import com.tccds.sice.modules.usuario.dto.UsuarioResponseDTO;
-import com.tccds.sice.modules.z_enums.PerfilUsuario;
-import com.tccds.sice.modules.z_enums.Serie;
 
 import lombok.RequiredArgsConstructor;
 
@@ -19,49 +24,49 @@ import lombok.RequiredArgsConstructor;
 public class UsuarioService {
     
     private final UsuarioRepository usuarioRepository;
-    private final AlunoRepository alunoRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final CredencialService credencialService;
+    private final MatriculaService matriculaService;
+    private final AlunoService alunoService;
+    private final TurmaService turmaService;
 
     @Transactional
     public UsuarioResponseDTO criar(CriarUsuarioDTO dto){
 
-        Credencial credencial = new Credencial();
+       Credencial credencial = credencialService.criar(dto.identificador(), dto.senha());
 
-        credencial.setIdentificador(dto.identificador());
-        credencial.setSenhaHash(passwordEncoder.encode(dto.senha()));
-        credencial.setAtivo(true);
-        credencial.setPrimeiroAcesso(true);
+       Usuario usuario = new Usuario(
+            dto.nome(),
+            dto.email(),
+            dto.perfil(),
+            credencial
+       );
 
-        Usuario usuario = new Usuario();
+       Usuario usuarioSalvo = usuarioRepository.save(usuario);
 
-        usuario.setNome(dto.nome());
-        usuario.setEmail(dto.email());
-        usuario.setPerfil(dto.perfil());
-        usuario.setCredencial(credencial);
+       Set<Long> turmasIds = new HashSet<>();
 
-        Usuario usuarioSalvo = usuarioRepository.save(usuario);
-        Serie serie = null;
+       if(dto.perfil() == PerfilUsuario.ALUNO){
 
-        if(dto.perfil() == PerfilUsuario.ALUNO){
+            if(dto.turmasIds() == null || dto.turmasIds().isEmpty()){
+                throw new RuntimeException("Aluno deve possuir pelo menos uma turma");
+            }
 
-            Aluno aluno = new Aluno();
+            Aluno aluno = alunoService.criar(usuarioSalvo);
 
-            aluno.setSerie(dto.serie());
-            aluno.setUsuario(usuario);
+            for(Long turmaId : dto.turmasIds()){
 
-            alunoRepository.save(aluno);
+                Turma turma = turmaService.buscarTurmaId(turmaId);
+                matriculaService.criar(aluno, turma);
 
-            serie = aluno.getSerie();
+                turmasIds.add(turma.getId());
 
-        }
+            }
 
-        return new UsuarioResponseDTO(
-            usuarioSalvo.getId(),
-            usuarioSalvo.getNome(),
-            usuarioSalvo.getEmail(),
-            usuarioSalvo.getPerfil(),
-            serie,
-            usuarioSalvo.getCredencial().getIdentificador()
+       }
+
+       return new UsuarioResponseDTO(
+            usuarioSalvo,
+            turmasIds
         );
 
     }

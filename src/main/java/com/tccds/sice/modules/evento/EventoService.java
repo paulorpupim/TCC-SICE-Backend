@@ -8,11 +8,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.tccds.sice.enums.StatusEvento;
 import com.tccds.sice.modules.evento.dto.CriarEventoDTO;
 import com.tccds.sice.modules.evento.dto.EventoResponseDTO;
 import com.tccds.sice.modules.usuario.Usuario;
 import com.tccds.sice.modules.usuario.UsuarioRepository;
-import com.tccds.sice.modules.z_enums.StatusEvento;
 
 import lombok.RequiredArgsConstructor;
 

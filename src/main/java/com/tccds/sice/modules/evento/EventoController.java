@@ -23,8 +23,9 @@ public class EventoController {
 
     @PostMapping("/cadastrarEvento")
     @PreAuthorize("hasAnyRole('SECRETARIA', 'ADMIN')")
-    public ResponseEntity<EventoResponseDTO> criar(
-        @Valid @RequestBody CriarEventoDTO dto){
+    public ResponseEntity<EventoResponseDTO> cadastrar(
+        @Valid @RequestBody CriarEventoDTO dto
+    ){
 
         EventoResponseDTO evento = eventoService.criar(dto);
 

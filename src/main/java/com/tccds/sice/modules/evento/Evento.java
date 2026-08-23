@@ -6,10 +6,10 @@ import java.util.Set;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.tccds.sice.enums.PerfilUsuario;
+import com.tccds.sice.enums.Serie;
+import com.tccds.sice.enums.StatusEvento;
 import com.tccds.sice.modules.usuario.Usuario;
-import com.tccds.sice.modules.z_enums.PerfilUsuario;
-import com.tccds.sice.modules.z_enums.Serie;
-import com.tccds.sice.modules.z_enums.StatusEvento;
 
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;

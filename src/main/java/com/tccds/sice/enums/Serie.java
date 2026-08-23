@@ -1,4 +1,4 @@
-package com.tccds.sice.modules.z_enums;
+package com.tccds.sice.enums;
 
 public enum Serie {
     PRIMEIRO_ANO,

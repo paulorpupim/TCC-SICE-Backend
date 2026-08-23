@@ -1,4 +1,4 @@
-package com.tccds.sice.modules.usuario;
+package com.tccds.sice.modules.turma;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -8,31 +8,31 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.tccds.sice.modules.usuario.dto.CriarUsuarioDTO;
-import com.tccds.sice.modules.usuario.dto.UsuarioResponseDTO;
+import com.tccds.sice.modules.turma.dto.CriarTurmaDTO;
+import com.tccds.sice.modules.turma.dto.TurmaResponseDTO;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/usuarios")
+@RequestMapping("/turmas")
 @RequiredArgsConstructor
-public class UsuarioController {
+public class TurmaController {
+    
+    private final TurmaService turmaService;
 
-    private final UsuarioService usuarioService;
-
-    @PostMapping("/cadastrarUsuario")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UsuarioResponseDTO> cadastrar(
-        @Valid @RequestBody CriarUsuarioDTO dto
+    @PostMapping("/cadastrarTurma")
+    public ResponseEntity<TurmaResponseDTO> cadastrar(
+        @Valid @RequestBody CriarTurmaDTO dto
     ){
 
-        UsuarioResponseDTO usuario = usuarioService.criar(dto);
+        TurmaResponseDTO turma = turmaService.criar(dto);
 
         return ResponseEntity
-            .status(HttpStatus.CREATED)
-            .body(usuario);
+                .status(HttpStatus.CREATED)
+                .body(turma);
 
     }
-    
+
 }
