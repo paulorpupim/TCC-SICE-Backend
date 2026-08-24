@@ -1,6 +1,5 @@
 package com.tccds.sice.modules.evento;
 
-import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -9,7 +8,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.tccds.sice.enums.StatusEvento;
 import com.tccds.sice.modules.evento.dto.CriarEventoDTO;
 import com.tccds.sice.modules.evento.dto.EventoResponseDTO;
 import com.tccds.sice.modules.evento.evento_turma.EventoTurma;

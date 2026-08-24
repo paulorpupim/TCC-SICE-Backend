@@ -1,6 +1,7 @@
 package com.tccds.sice.security;
 
 import java.util.Base64;
+import java.util.List;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -27,6 +29,9 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -36,51 +41,40 @@ public class SecurityConfig {
     @Value("${security.jwt.secret}")
     private String jwtSecret;
 
-
     @Bean
     public PasswordEncoder passwordEncoder() {
 
         return new BCryptPasswordEncoder();
     }
 
-
     @Bean
     public AuthenticationManager authenticationManager(
             UserDetailsService userDetailsService,
-            PasswordEncoder passwordEncoder
-    ) {
+            PasswordEncoder passwordEncoder) {
 
-        DaoAuthenticationProvider provider =
-                new DaoAuthenticationProvider(
-                        userDetailsService
-                );
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(
+                userDetailsService);
 
         provider.setPasswordEncoder(
-                passwordEncoder
-        );
+                passwordEncoder);
 
         return new ProviderManager(provider);
     }
 
-
     @Bean
     public SecretKey secretKey() {
 
-        byte[] keyBytes =
-                Base64.getDecoder()
-                        .decode(jwtSecret);
+        byte[] keyBytes = Base64.getDecoder()
+                .decode(jwtSecret);
 
         return new SecretKeySpec(
                 keyBytes,
-                "HmacSHA256"
-        );
+                "HmacSHA256");
     }
-
 
     @Bean
     public JwtEncoder jwtEncoder(
-            SecretKey secretKey
-    ) {
+            SecretKey secretKey) {
 
         return NimbusJwtEncoder
                 .withSecretKey(secretKey)
@@ -88,11 +82,9 @@ public class SecurityConfig {
                 .build();
     }
 
-
     @Bean
     public JwtDecoder jwtDecoder(
-            SecretKey secretKey
-    ) {
+            SecretKey secretKey) {
 
         return NimbusJwtDecoder
                 .withSecretKey(secretKey)
@@ -100,72 +92,80 @@ public class SecurityConfig {
                 .build();
     }
 
-
     @Bean
-    public JwtAuthenticationConverter
-            jwtAuthenticationConverter() {
+    public JwtAuthenticationConverter jwtAuthenticationConverter() {
 
-        JwtGrantedAuthoritiesConverter authorities =
-                new JwtGrantedAuthoritiesConverter();
+        JwtGrantedAuthoritiesConverter authorities = new JwtGrantedAuthoritiesConverter();
 
         authorities.setAuthoritiesClaimName(
-                "roles"
-        );
+                "roles");
 
         authorities.setAuthorityPrefix(
-                "ROLE_"
-        );
+                "ROLE_");
 
-        JwtAuthenticationConverter converter =
-                new JwtAuthenticationConverter();
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
 
         converter.setJwtGrantedAuthoritiesConverter(
-                authorities
-        );
+                authorities);
 
         return converter;
     }
 
-
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            JwtAuthenticationConverter converter
-    ) throws Exception {
+            JwtAuthenticationConverter converter) throws Exception {
 
         http
 
-            .csrf(csrf ->
-                csrf.disable()
-            )
+                .cors(Customizer.withDefaults())
 
-            .sessionManagement(session ->
-                session.sessionCreationPolicy(
-                    SessionCreationPolicy.STATELESS
-                )
-            )
+                .csrf(csrf -> csrf.disable())
 
-            .authorizeHttpRequests(auth ->
-                auth
+                .sessionManagement(session -> session.sessionCreationPolicy(
+                        SessionCreationPolicy.STATELESS))
 
-                    .requestMatchers(
-                        HttpMethod.POST,
-                        "/auth/login"
-                    )
-                    .permitAll()
+                .authorizeHttpRequests(auth -> auth
 
-                    .anyRequest()
-                    .authenticated()
-            )
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/auth/login")
+                        .permitAll()
 
-            .oauth2ResourceServer(resourceServer ->
-                resourceServer.jwt(jwt ->
-                    jwt.jwtAuthenticationConverter(
-                        converter
-                    )
-                )
-            );
+                        .anyRequest()
+                        .authenticated())
+
+                .oauth2ResourceServer(resourceServer -> resourceServer.jwt(jwt -> jwt.jwtAuthenticationConverter(
+                        converter)));
 
         return http.build();
     }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:5173"));
+
+        configuration.setAllowedMethods(List.of(
+                "GET",
+                "POST",
+                "PUT",
+                "DELETE",
+                "OPTIONS"));
+
+        configuration.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type"));
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+
+        source.registerCorsConfiguration("/**", configuration);
+
+        return source;
+
+    }
+
 }
