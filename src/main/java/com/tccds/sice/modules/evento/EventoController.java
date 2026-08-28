@@ -1,8 +1,11 @@
 package com.tccds.sice.modules.evento;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,6 +36,17 @@ public class EventoController {
             .status(HttpStatus.CREATED)
             .body(evento);
 
-    } 
+    }
+
+    
+    @GetMapping("/listarEventos")
+    public ResponseEntity<List<EventoResponseDTO>> listarTodos() {
+        return ResponseEntity.ok(eventoService.listarTodos());
+    }
+
+    @GetMapping("/listarMeusEventos")
+    public ResponseEntity<List<EventoResponseDTO>> listarEventosUsuarioLogado() {
+        return ResponseEntity.ok(eventoService.listarEventosUsuarioLogado());
+    }
 
 }
