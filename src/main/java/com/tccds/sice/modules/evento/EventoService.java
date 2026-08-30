@@ -17,6 +17,7 @@ import com.tccds.sice.modules.evento.dto.EventoResponseDTO;
 import com.tccds.sice.modules.evento.evento_turma.EventoTurma;
 import com.tccds.sice.modules.turma.Turma;
 import com.tccds.sice.modules.turma.TurmaRepository;
+import com.tccds.sice.modules.turma.TurmaService;
 import com.tccds.sice.modules.usuario.Usuario;
 import com.tccds.sice.modules.usuario.UsuarioService;
 
@@ -90,7 +91,7 @@ public class EventoService {
         }
 
         @Transactional(readOnly = true)
-        public List<EventoResponseDTO> listarEventosUsuarioLogado() {
+        public List<EventoResponseDTO> listarEventosPorPerfil() {
 
                 Usuario usuario = usuarioService.obterUsuarioLogado();
 

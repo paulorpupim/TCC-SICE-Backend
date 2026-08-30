@@ -12,13 +12,11 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "tb_turma")
 @Setter
 @Getter
 @NoArgsConstructor
@@ -27,6 +25,9 @@ public class Turma {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false, length = 4)
+    private Integer anoLetivo;
     
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
@@ -36,9 +37,13 @@ public class Turma {
     @JoinColumn(name = "curso_id", nullable = false)
     private Curso curso;
 
-    public Turma(Etapa etapa, Curso curso){
+    private Boolean ativo;
+
+    public Turma(Integer anoLetivo, Etapa etapa, Curso curso ){
+        this.anoLetivo = anoLetivo;
         this.etapa = etapa;
         this.curso = curso;
+        this.ativo = true;
     }
 
 }

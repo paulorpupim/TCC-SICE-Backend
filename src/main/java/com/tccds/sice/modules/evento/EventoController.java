@@ -38,15 +38,14 @@ public class EventoController {
 
     }
 
-    
     @GetMapping("/listarEventos")
     public ResponseEntity<List<EventoResponseDTO>> listarTodos() {
         return ResponseEntity.ok(eventoService.listarTodos());
     }
 
-    @GetMapping("/listarMeusEventos")
+    @GetMapping("/listarEventosPerfil")
     public ResponseEntity<List<EventoResponseDTO>> listarEventosUsuarioLogado() {
-        return ResponseEntity.ok(eventoService.listarEventosUsuarioLogado());
+        return ResponseEntity.ok(eventoService.listarEventosPorPerfil());
     }
 
 }

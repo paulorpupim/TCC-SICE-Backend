@@ -6,6 +6,9 @@ import jakarta.validation.constraints.NotNull;
 public record CriarTurmaDTO(
 
     @NotNull
+    Integer anoLetivo,
+
+    @NotNull
     Etapa etapa,
 
     @NotNull

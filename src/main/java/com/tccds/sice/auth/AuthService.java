@@ -5,9 +5,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
-import com.tccds.sice.auth.dto.LoginRequest;
-import com.tccds.sice.auth.dto.LoginResponse;
+import com.tccds.sice.auth.dto.LoginRequestDTO;
+import com.tccds.sice.auth.dto.LoginResponseDTO;
 import com.tccds.sice.modules.usuario.Usuario;
+import com.tccds.sice.modules.usuario.UsuarioRepository;
 import com.tccds.sice.security.TokenService;
 import com.tccds.sice.security.UsuarioDetails;
 
@@ -17,53 +18,41 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final AuthenticationManager
-            authenticationManager;
+        private final AuthenticationManager authenticationManager;
+        private final TokenService tokenService;
+        private final UsuarioRepository usuarioRepository;
 
-    private final TokenService tokenService;
+        public LoginResult login(LoginRequestDTO request) {
 
+                Authentication authenticationRequest = UsernamePasswordAuthenticationToken
+                                .unauthenticated(
+                                                request.identificador(),
+                                                request.senha());
 
-    public LoginResponse login(
-            LoginRequest request
-    ) {
+                Authentication authentication = authenticationManager.authenticate(
+                                authenticationRequest);
 
-        Authentication authenticationRequest =
-                UsernamePasswordAuthenticationToken
-                        .unauthenticated(
-                                request.identificador(),
-                                request.senha()
-                        );
+                UsuarioDetails usuarioDetails = (UsuarioDetails) authentication.getPrincipal();
 
+                Usuario usuario = usuarioDetails.getUsuario();
 
-        Authentication authentication =
-                authenticationManager.authenticate(
-                        authenticationRequest
-                );
+                String token = tokenService.gerarToken(usuario);
 
+                return new LoginResult(
+                                token,
+                                usuario.getPerfil(),
+                                usuario.getCredencial().isPrimeiroAcesso());
+        }
 
-        UsuarioDetails usuarioDetails =
-                (UsuarioDetails)
-                        authentication
-                                .getPrincipal();
+        public LoginResponseDTO me(String identificador) {
 
+                Usuario usuario = usuarioRepository
+                                .findByCredencial_Identificador(identificador)
+                                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        Usuario usuario =
-                usuarioDetails
-                        .getUsuario();
+                return new LoginResponseDTO(
+                                usuario.getPerfil(),
+                                usuario.getCredencial().isPrimeiroAcesso());
+        }
 
-
-        String token =
-                tokenService
-                        .gerarToken(usuario);
-
-
-        return new LoginResponse(
-                token,
-                "Bearer",
-                usuario.getPerfil(),
-                usuario
-                        .getCredencial()
-                        .isPrimeiroAcesso()
-        );
-    }
 }

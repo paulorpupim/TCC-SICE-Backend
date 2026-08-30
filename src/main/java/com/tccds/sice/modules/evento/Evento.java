@@ -28,13 +28,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "tb_evento")
 @Setter
 @Getter
 @NoArgsConstructor
@@ -59,19 +57,19 @@ public class Evento {
 
     @ElementCollection(targetClass = PerfilUsuario.class)
     @Enumerated(EnumType.STRING)
-    @CollectionTable(name = "tb_evento_perfil", joinColumns = @JoinColumn(name = "evento_id"))
+    @CollectionTable(name = "evento_perfil", joinColumns = @JoinColumn(name = "evento_id"))
     @Column(nullable = false)
     private Set<PerfilUsuario> perfisDestinados = new HashSet<>();
 
     @ElementCollection(targetClass = Etapa.class)
     @Enumerated(EnumType.STRING)
-    @CollectionTable(name = "tb_evento_etapa", joinColumns = @JoinColumn(name = "evento_id"))
+    @CollectionTable(name = "evento_etapa", joinColumns = @JoinColumn(name = "evento_id"))
     @Column(nullable = false)
     private Set<Etapa> etapasDestinadas = new HashSet<>();
 
     @ElementCollection(targetClass = ModalidadeEnsino.class)
     @Enumerated(EnumType.STRING)
-    @CollectionTable(name = "tb_evento_modalidade", joinColumns = @JoinColumn(name = "evento_id"))
+    @CollectionTable(name = "evento_modalidade", joinColumns = @JoinColumn(name = "evento_id"))
     @Column(nullable = false)
     private Set<ModalidadeEnsino> modalidadesDestinadas = new HashSet<>();
 

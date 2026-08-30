@@ -11,7 +11,8 @@ public record UsuarioResponseDTO(
     String email,
     PerfilUsuario perfil,
     Set<Long> turmasIds,
-    String identificador
+    String identificador,
+    boolean ativo
 ) {
     public UsuarioResponseDTO(Usuario usuario, Set<Long> turmasIds){
         this(
@@ -20,7 +21,8 @@ public record UsuarioResponseDTO(
             usuario.getEmail(),
             usuario.getPerfil(),
             turmasIds,
-            usuario.getCredencial().getIdentificador()
+            usuario.getCredencial().getIdentificador(),
+            usuario.getCredencial().isAtivo()
         );
     }
 }

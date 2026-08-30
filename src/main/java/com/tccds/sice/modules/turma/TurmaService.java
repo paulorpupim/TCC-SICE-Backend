@@ -21,6 +21,7 @@ public class TurmaService {
         Curso curso = cursoService.buscarCursoId(dto.cursoId());
 
         Turma turma = new Turma(
+            dto.anoLetivo(),
             dto.etapa(),
             curso
         );

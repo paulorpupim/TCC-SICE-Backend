@@ -1,10 +1,9 @@
-package com.tccds.sice.auth.dto;
+package com.tccds.sice.auth;
 
 import com.tccds.sice.enums.PerfilUsuario;
 
-public record LoginResponse(
+public record LoginResult(
     String token,
-    String tipo,
     PerfilUsuario perfil,
     boolean primeiroAcesso
 ) {

@@ -26,6 +26,7 @@ public record CriarUsuarioDTO(
         @NotNull
         PerfilUsuario perfil,
 
+        @NotNull
         Set<Long> turmasIds
 ) {
 
