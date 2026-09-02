@@ -1,8 +1,11 @@
 package com.tccds.sice.modules.curso;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,6 +36,12 @@ public class CursoController {
                 .status(HttpStatus.CREATED)
                 .body(curso);
 
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/listarCursos")
+    public ResponseEntity<List<CursoResponseDTO>> listar(){
+        return ResponseEntity.ok(cursoService.listarTodos());
     }
 
 }
