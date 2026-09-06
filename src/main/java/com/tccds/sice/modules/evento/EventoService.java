@@ -147,7 +147,7 @@ public class EventoService {
                 boolean modalidadeAtende = evento.getModalidadesDestinadas().isEmpty()
                                 ||
                                 evento.getModalidadesDestinadas()
-                                                .contains(turma.getCurso().getModalidade());
+                                                .contains(turma.getModalidade());
 
                 boolean turmaAtende = evento.getDestinacoesTurma().isEmpty()
                                 ||

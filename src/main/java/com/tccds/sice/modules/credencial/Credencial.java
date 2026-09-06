@@ -25,15 +25,13 @@ public class Credencial {
     private String senhaHash;
 
     @Column(nullable = false)
-    private boolean primeiroAcesso;
+    private boolean primeiroAcesso = true;
 
-    private boolean ativo;
+    private boolean ativo = true;
 
-    public Credencial(String identificador, String senha, boolean primeiroAcesso, boolean ativo){
+    public Credencial(String identificador, String senha){
         this.identificador = identificador;
         this.senhaHash = senha;
-        this.primeiroAcesso = primeiroAcesso;
-        this.ativo = ativo;
     }
 
 }

@@ -1,5 +1,7 @@
 package com.tccds.sice.modules.turma;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import com.tccds.sice.modules.curso.Curso;
@@ -23,6 +25,7 @@ public class TurmaService {
         Turma turma = new Turma(
             dto.anoLetivo(),
             dto.etapa(),
+            dto.modalidade(),
             curso
         );
 
@@ -37,6 +40,15 @@ public class TurmaService {
         return turmaRepository.findById(id).orElseThrow(
             () -> new RuntimeException("Turma não encontrada"));
     
+    }
+
+    public List<TurmaResponseDTO> listarTodos() {
+
+        return turmaRepository.findAll()
+                .stream()
+                .map(TurmaResponseDTO::new)
+                .toList();
+
     }
 
 }

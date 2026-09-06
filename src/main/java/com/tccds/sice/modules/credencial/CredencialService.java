@@ -14,9 +14,7 @@ public class CredencialService {
     public Credencial criar(String identificador, String senha){
         return new Credencial(
             identificador,
-            passwordEncoder.encode(senha),
-            true,
-            true
+            passwordEncoder.encode(senha)
         );
     }
 

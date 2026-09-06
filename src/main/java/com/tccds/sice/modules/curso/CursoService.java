@@ -18,8 +18,7 @@ public class CursoService {
     public CursoResponseDTO criar(CriarCursoDTO dto){
 
         Curso curso = new Curso(
-            dto.nome(),
-            dto.modalidade()
+            dto.nome()
         );
 
         Curso cursoSalvo = cursoRepository.save(curso);
@@ -34,10 +33,12 @@ public class CursoService {
     }
 
     public List<CursoResponseDTO> listarTodos() {
+
         return cursoRepository.findAll()
                 .stream()
                 .map(CursoResponseDTO::new)
                 .toList();
+                
     }
 
 }

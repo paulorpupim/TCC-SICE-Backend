@@ -1,6 +1,7 @@
 package com.tccds.sice.modules.turma;
 
 import com.tccds.sice.enums.Etapa;
+import com.tccds.sice.enums.ModalidadeEnsino;
 import com.tccds.sice.modules.curso.Curso;
 
 import jakarta.persistence.Column;
@@ -26,7 +27,7 @@ public class Turma {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 4)
+    @Column(nullable = false)
     private Integer anoLetivo;
     
     @Column(nullable = false)
@@ -37,13 +38,17 @@ public class Turma {
     @JoinColumn(name = "curso_id", nullable = false)
     private Curso curso;
 
-    private Boolean ativo;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ModalidadeEnsino modalidade;
 
-    public Turma(Integer anoLetivo, Etapa etapa, Curso curso ){
+    private boolean ativo = true;
+
+    public Turma(Integer anoLetivo, Etapa etapa, ModalidadeEnsino modalidade, Curso curso ){
         this.anoLetivo = anoLetivo;
         this.etapa = etapa;
+        this.modalidade = modalidade;
         this.curso = curso;
-        this.ativo = true;
     }
 
 }

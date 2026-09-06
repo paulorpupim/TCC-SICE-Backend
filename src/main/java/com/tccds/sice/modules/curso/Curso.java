@@ -25,14 +25,11 @@ public class Curso {
 
     @Column(nullable = false, length = 100)
     private String nome;
-    
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private ModalidadeEnsino modalidade;
 
-    public Curso(String nome, ModalidadeEnsino modalidade){
+    private boolean ativo = true;
+
+    public Curso(String nome){
         this.nome = nome;
-        this.modalidade = modalidade;
     }
 
 }
