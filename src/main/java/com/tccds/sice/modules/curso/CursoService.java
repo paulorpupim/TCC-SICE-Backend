@@ -6,30 +6,36 @@ import org.springframework.stereotype.Service;
 
 import com.tccds.sice.modules.curso.dto.CriarCursoDTO;
 import com.tccds.sice.modules.curso.dto.CursoResponseDTO;
+import com.tccds.sice.modules.curso.dto.EditarCursoDTO;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class CursoService {
-    
+
     private final CursoRepository cursoRepository;
 
-    public CursoResponseDTO criar(CriarCursoDTO dto){
+    public Curso buscarCursoId(Long id) {
+        return cursoRepository.findById(id).orElseThrow(
+                () -> new RuntimeException("Curso não encontrado"));
+    }
+
+    public CursoResponseDTO buscarCursoPorId(Long id) {
+        Curso curso = buscarCursoId(id);
+
+        return new CursoResponseDTO(curso);
+    }
+
+    public CursoResponseDTO criar(CriarCursoDTO dto) {
 
         Curso curso = new Curso(
-            dto.nome()
-        );
+                dto.nome());
 
         Curso cursoSalvo = cursoRepository.save(curso);
 
         return new CursoResponseDTO(cursoSalvo);
 
-    }
-
-    public Curso buscarCursoId(Long id){
-        return cursoRepository.findById(id).orElseThrow(
-            () -> new RuntimeException("Curso não encontrado"));
     }
 
     public List<CursoResponseDTO> listarTodos() {
@@ -38,7 +44,27 @@ public class CursoService {
                 .stream()
                 .map(CursoResponseDTO::new)
                 .toList();
-                
+
+    }
+
+    public CursoResponseDTO editar(Long id, EditarCursoDTO dto) {
+        Curso curso = buscarCursoId(id);
+
+        curso.setNome(dto.nome());
+
+        cursoRepository.save(curso);
+
+        return new CursoResponseDTO(curso);
+    }
+
+    public void alterarStatus(Long id, boolean ativo) {
+
+        Curso curso = cursoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Curso não encontrado"));
+
+        curso.setAtivo(ativo);
+
+        cursoRepository.save(curso);
     }
 
 }
