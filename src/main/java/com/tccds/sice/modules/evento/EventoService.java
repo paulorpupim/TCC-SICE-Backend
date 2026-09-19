@@ -1,5 +1,6 @@
 package com.tccds.sice.modules.evento;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -9,12 +10,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.tccds.sice.enums.PerfilUsuario;
 import com.tccds.sice.enums.StatusEvento;
+import com.tccds.sice.exception.EntidadeNaoEncontradaException;
 import com.tccds.sice.modules.aluno.Aluno;
 import com.tccds.sice.modules.aluno.AlunoRepository;
 import com.tccds.sice.modules.aluno.matricula.Matricula;
 import com.tccds.sice.modules.evento.dto.CriarEventoDTO;
 import com.tccds.sice.modules.evento.dto.EventoResponseDTO;
-import com.tccds.sice.modules.evento.evento_turma.EventoTurma;
+import com.tccds.sice.modules.evento.evento_destino.EventoDestino;
+import com.tccds.sice.modules.evento.evento_destino_turma.dto.CriarEventoDestinoDTO;
 import com.tccds.sice.modules.turma.Turma;
 import com.tccds.sice.modules.turma.TurmaRepository;
 import com.tccds.sice.modules.usuario.Usuario;
@@ -32,59 +35,76 @@ public class EventoService {
 
         private final UsuarioService usuarioService;
 
-        private Set<Long> obterTurmasIds(Evento evento) {
-
-                return evento.getDestinacoesTurma()
-                                .stream()
-                                .map(eventoTurma -> eventoTurma.getTurma().getId())
-                                .collect(Collectors.toSet());
-        }
-
         @Transactional
         public EventoResponseDTO criar(CriarEventoDTO dto) {
 
-                validarDestinações(dto);
+                validarDestinos(dto);
 
                 Usuario usuarioLogado = usuarioService.obterUsuarioLogado();
 
                 Evento evento = new Evento(
                                 dto.titulo(),
                                 dto.descricao(),
-                                dto.dataHoraInicio(),
-                                dto.perfisDestinados(),
-                                dto.etapasDestinadas(),
-                                dto.modalidadesDestinadas(),
+                                dto.dataInicio(),
+                                dto.horaInicio(),
                                 usuarioLogado);
 
-                for (Long turmaId : dto.turmasDestinadasIds()) {
+                for (CriarEventoDestinoDTO destinoDTO : dto.destinos()) {
 
-                        Turma turma = turmaRepository.findById(turmaId)
-                                        .orElseThrow(() -> new RuntimeException("Turma não encontrada"));
+                        EventoDestino destino = new EventoDestino(
+                                        destinoDTO.perfil(),
+                                        destinoDTO.etapas(),
+                                        destinoDTO.modalidades());
 
-                        EventoTurma eventoTurma = new EventoTurma(
-                                        evento,
-                                        turma);
+                        List<Turma> turmas = turmaRepository.findAllById(destinoDTO.turmasIds());
 
-                        evento.getDestinacoesTurma().add(eventoTurma);
+                        if (turmas.size() != destinoDTO.turmasIds().size()) {
+                                throw new EntidadeNaoEncontradaException(
+                                                "Uma ou mais turmas não foram encontradas!");
+                        }
+
+                        for (Turma turma : turmas) {
+                                destino.adicionarTurma(turma);
+                        }
+
+                        evento.adicionarDestino(destino);
                 }
 
                 Evento eventoSalvo = eventoRepository.save(evento);
 
                 return new EventoResponseDTO(
-                                eventoSalvo,
-                                obterTurmasIds(eventoSalvo));
+                                eventoSalvo);
         }
 
-        private void validarDestinações(CriarEventoDTO dto) {
-                boolean possuiFiltrosDeAluno = !dto.etapasDestinadas().isEmpty()
-                                || !dto.modalidadesDestinadas().isEmpty()
-                                || !dto.turmasDestinadasIds().isEmpty();
+        private void validarDestinos(CriarEventoDTO dto) {
 
-                boolean possuiPerfilAluno = dto.perfisDestinados().contains(PerfilUsuario.ALUNO);
+                Set<PerfilUsuario> perfis = new HashSet<>();
 
-                if (possuiFiltrosDeAluno && !possuiPerfilAluno) {
-                        throw new RuntimeException(
-                                        "Filtros de etapa, modalidade ou turma exigem o perfil ALUNO.");
+                for (CriarEventoDestinoDTO destino : dto.destinos()) {
+
+                        if (destino.perfil() != PerfilUsuario.ALUNO
+                                        && destino.perfil() != PerfilUsuario.PROFESSOR) {
+
+                                throw new RuntimeException(
+                                                "O evento só pode ser destinado a alunos ou professores.");
+                        }
+
+                        if (!perfis.add(destino.perfil())) {
+                                throw new RuntimeException(
+                                                "Não é permitido mais de um destino para o mesmo perfil.");
+                        }
+
+                        if (destino.perfil() == PerfilUsuario.PROFESSOR) {
+
+                                boolean possuiFiltros = !destino.etapas().isEmpty()
+                                                || !destino.modalidades().isEmpty()
+                                                || !destino.turmasIds().isEmpty();
+
+                                if (possuiFiltros) {
+                                        throw new RuntimeException(
+                                                        "Destinos para professores não podem possuir filtros.");
+                                }
+                        }
                 }
         }
 
@@ -93,11 +113,8 @@ public class EventoService {
 
                 return eventoRepository.findAll()
                                 .stream()
-                                .map(evento -> new EventoResponseDTO(
-                                                evento,
-                                                obterTurmasIds(evento)))
+                                .map(EventoResponseDTO::new)
                                 .toList();
-
         }
 
         @Transactional(readOnly = true)
@@ -105,72 +122,84 @@ public class EventoService {
 
                 Usuario usuario = usuarioService.obterUsuarioLogado();
 
-                return eventoRepository
-                                .findByStatus(StatusEvento.ATIVO)
-                                .stream()
-                                .filter(evento -> podeVisualizar(evento, usuario))
-                                .map(evento -> new EventoResponseDTO(
-                                                evento,
-                                                obterTurmasIds(evento)))
-                                .toList();
-        }
+                List<Evento> eventos = eventoRepository.findByStatus(StatusEvento.ATIVO);
 
-        private boolean podeVisualizar(Evento evento, Usuario usuario) {
                 PerfilUsuario perfil = usuario.getPerfil();
 
                 if (perfil == PerfilUsuario.ADMIN || perfil == PerfilUsuario.SECRETARIA) {
-                        return true;
+                        return eventos.stream()
+                                        .map(EventoResponseDTO::new)
+                                        .toList();
                 }
 
-                if (!evento.getPerfisDestinados().contains(perfil)) {
-                        return false;
+                if (perfil == PerfilUsuario.PROFESSOR) {
+                        return eventos.stream()
+                                        .filter(this::destinadoAProfessor)
+                                        .map(EventoResponseDTO::new)
+                                        .toList();
                 }
 
                 if (perfil == PerfilUsuario.ALUNO) {
-                        return alunoAtendeDestinacao(evento, usuario);
+
+                        Aluno aluno = alunoRepository.findByUsuario(usuario)
+                                        .orElseThrow(() -> new EntidadeNaoEncontradaException(
+                                                        "Aluno não encontrado"));
+
+                        return eventos.stream()
+                                        .filter(evento -> alunoPodeVisualizar(evento, aluno))
+                                        .map(EventoResponseDTO::new)
+                                        .toList();
                 }
 
-                return true;
-
+                return List.of();
         }
 
-        private boolean alunoAtendeDestinacao(Evento evento, Usuario usuario) {
+        private boolean destinadoAProfessor(Evento evento) {
 
-                Aluno aluno = alunoRepository.findByUsuario(usuario)
-                                .orElseThrow(() -> new RuntimeException("Aluno não encontrado"));
+                return evento.getDestinos()
+                                .stream()
+                                .anyMatch(destino -> destino.getPerfil() == PerfilUsuario.PROFESSOR);
+        }
+
+        private boolean alunoPodeVisualizar(Evento evento, Aluno aluno) {
+
+                return evento.getDestinos()
+                                .stream()
+                                .filter(destino -> destino.getPerfil() == PerfilUsuario.ALUNO)
+                                .anyMatch(destino -> alunoAtendeDestino(aluno, destino));
+        }
+
+        private boolean alunoAtendeDestino(
+                        Aluno aluno,
+                        EventoDestino destino) {
 
                 return aluno.getMatriculas()
                                 .stream()
                                 .filter(Matricula::isAtivo)
-                                .anyMatch(matricula -> matriculaAtendeEvento(matricula, evento));
-
+                                .anyMatch(matricula -> matriculaAtendeDestino(matricula, destino));
         }
 
-        private boolean matriculaAtendeEvento(Matricula matricula, Evento evento) {
+        private boolean matriculaAtendeDestino(
+                        Matricula matricula,
+                        EventoDestino destino) {
 
                 Turma turma = matricula.getTurma();
 
-                boolean etapaAtende = evento.getEtapasDestinadas().isEmpty()
-                                ||
-                                evento.getEtapasDestinadas()
-                                                .contains(turma.getEtapa());
+                boolean etapaAtende = destino.getEtapas().isEmpty()
+                                || destino.getEtapas().contains(turma.getEtapa());
 
-                boolean modalidadeAtende = evento.getModalidadesDestinadas().isEmpty()
-                                ||
-                                evento.getModalidadesDestinadas()
-                                                .contains(turma.getModalidade());
+                boolean modalidadeAtende = destino.getModalidades().isEmpty()
+                                || destino.getModalidades().contains(turma.getModalidade());
 
-                boolean turmaAtende = evento.getDestinacoesTurma().isEmpty()
-                                ||
-                                evento.getDestinacoesTurma()
+                boolean turmaAtende = destino.getDestinacoesTurma().isEmpty()
+                                || destino.getDestinacoesTurma()
                                                 .stream()
-                                                .anyMatch(destino -> destino.getTurma().getId()
+                                                .anyMatch(destinacao -> destinacao.getTurma()
+                                                                .getId()
                                                                 .equals(turma.getId()));
 
                 return etapaAtende
                                 && modalidadeAtende
                                 && turmaAtende;
-
         }
-
 }

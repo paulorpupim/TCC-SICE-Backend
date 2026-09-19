@@ -1,13 +1,14 @@
 package com.tccds.sice.modules.evento.dto;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Set;
 
-import com.tccds.sice.enums.Etapa;
-import com.tccds.sice.enums.ModalidadeEnsino;
-import com.tccds.sice.enums.PerfilUsuario;
+import com.tccds.sice.modules.evento.evento_destino_turma.dto.CriarEventoDestinoDTO;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -21,20 +22,14 @@ public record CriarEventoDTO(
     String descricao,
 
     @NotNull
-    LocalDateTime dataHoraInicio,
+    LocalDate dataInicio,
 
-    @NotNull
-    Set<PerfilUsuario> perfisDestinados,
+    @NotNull 
+    LocalTime horaInicio,
 
-    @NotNull
-    Set<Etapa> etapasDestinadas,
-
-    @NotNull
-    Set<ModalidadeEnsino> modalidadesDestinadas,
-
-    @NotNull
-    Set<Long> turmasDestinadasIds
-
+    @NotEmpty
+    @Valid
+    Set<CriarEventoDestinoDTO> destinos
 ) {
     
 }

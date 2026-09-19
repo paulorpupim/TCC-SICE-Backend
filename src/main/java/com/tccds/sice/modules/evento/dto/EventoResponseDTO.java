@@ -1,38 +1,37 @@
 package com.tccds.sice.modules.evento.dto;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-import com.tccds.sice.enums.Etapa;
-import com.tccds.sice.enums.ModalidadeEnsino;
-import com.tccds.sice.enums.PerfilUsuario;
 import com.tccds.sice.enums.StatusEvento;
 import com.tccds.sice.modules.evento.Evento;
+import com.tccds.sice.modules.evento.evento_destino_turma.dto.EventoDestinoResponseDTO;
 
 public record EventoResponseDTO(
     Long id,
     String titulo,
     String descricao,
-    LocalDateTime dataHoraInicio,
+    LocalDate dataInicio,
+    LocalTime horaInicio,
     StatusEvento status,
-    Set<PerfilUsuario> perfisDestinados,
-    Set<Etapa> etapasDestinadas,
-    Set<ModalidadeEnsino> modalidadesDestinadas,
-    Set<Long> turmasDestinadasIds,
+    Set<EventoDestinoResponseDTO> destinos,
     Long criadoPor
 ) {
 
-    public EventoResponseDTO(Evento evento, Set<Long> turmasDestinadasIds) {
+    public EventoResponseDTO(Evento evento) {
         this(
             evento.getId(),
             evento.getTitulo(),
             evento.getDescricao(),
-            evento.getDataHoraInicio(),
+            evento.getDataInicio(),
+            evento.getHoraInicio(),
             evento.getStatus(),
-            evento.getPerfisDestinados(),
-            evento.getEtapasDestinadas(),
-            evento.getModalidadesDestinadas(),
-            turmasDestinadasIds,
+            evento.getDestinos()
+                .stream()
+                .map(EventoDestinoResponseDTO::new)
+                .collect(Collectors.toSet()),
             evento.getCriadoPor().getId()
         );
     }

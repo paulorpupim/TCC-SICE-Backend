@@ -1,25 +1,22 @@
 package com.tccds.sice.modules.evento;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import com.tccds.sice.enums.Etapa;
-import com.tccds.sice.enums.ModalidadeEnsino;
-import com.tccds.sice.enums.PerfilUsuario;
 import com.tccds.sice.enums.StatusEvento;
-import com.tccds.sice.modules.evento.evento_turma.EventoTurma;
+import com.tccds.sice.modules.evento.evento_destino.EventoDestino;
 import com.tccds.sice.modules.usuario.Usuario;
 
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.CascadeType;
-import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.GeneratedValue;
@@ -49,32 +46,17 @@ public class Evento {
     private String descricao;
 
     @Column(nullable = false)
-    private LocalDateTime dataHoraInicio;
+    private LocalDate dataInicio;
+
+    @Column(nullable = false)
+    private LocalTime horaInicio;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private StatusEvento status = StatusEvento.ATIVO;
 
-    @ElementCollection(targetClass = PerfilUsuario.class)
-    @Enumerated(EnumType.STRING)
-    @CollectionTable(name = "evento_perfil", joinColumns = @JoinColumn(name = "evento_id"))
-    @Column(nullable = false)
-    private Set<PerfilUsuario> perfisDestinados = new HashSet<>();
-
-    @ElementCollection(targetClass = Etapa.class)
-    @Enumerated(EnumType.STRING)
-    @CollectionTable(name = "evento_etapa", joinColumns = @JoinColumn(name = "evento_id"))
-    @Column(nullable = false)
-    private Set<Etapa> etapasDestinadas = new HashSet<>();
-
-    @ElementCollection(targetClass = ModalidadeEnsino.class)
-    @Enumerated(EnumType.STRING)
-    @CollectionTable(name = "evento_modalidade", joinColumns = @JoinColumn(name = "evento_id"))
-    @Column(nullable = false)
-    private Set<ModalidadeEnsino> modalidadesDestinadas = new HashSet<>();
-
     @OneToMany(mappedBy = "evento", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<EventoTurma> destinacoesTurma = new HashSet<>();
+    private Set<EventoDestino> destinos = new HashSet<>();
 
     @Column(nullable = false, updatable = false)
     @CreationTimestamp
@@ -90,19 +72,24 @@ public class Evento {
     public Evento(
             String titulo,
             String descricao,
-            LocalDateTime dataHoraInicio,
-            Set<PerfilUsuario> perfisDestinados,
-            Set<Etapa> etapasDestinadas,
-            Set<ModalidadeEnsino> modalidadesDestinadas,
+            LocalDate dataInicio,
+            LocalTime horaInicio,
             Usuario criadoPor) {
 
         this.titulo = titulo;
         this.descricao = descricao;
-        this.dataHoraInicio = dataHoraInicio;
-        this.perfisDestinados = perfisDestinados;
-        this.etapasDestinadas = etapasDestinadas;
-        this.modalidadesDestinadas = modalidadesDestinadas;
+        this.dataInicio = dataInicio;
         this.criadoPor = criadoPor;
+    }
+
+    public void adicionarDestino(EventoDestino destino) {
+        destinos.add(destino);
+        destino.setEvento(this);
+    }
+
+    public void removerDestino(EventoDestino destino) {
+        destinos.remove(destino);
+        destino.setEvento(null);
     }
 
 }
