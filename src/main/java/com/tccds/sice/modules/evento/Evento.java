@@ -53,7 +53,7 @@ public class Evento {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private StatusEvento status;
+    private StatusEvento status = StatusEvento.ATIVO;
 
     @ElementCollection(targetClass = PerfilUsuario.class)
     @Enumerated(EnumType.STRING)
@@ -91,7 +91,6 @@ public class Evento {
             String titulo,
             String descricao,
             LocalDateTime dataHoraInicio,
-            StatusEvento status,
             Set<PerfilUsuario> perfisDestinados,
             Set<Etapa> etapasDestinadas,
             Set<ModalidadeEnsino> modalidadesDestinadas,
@@ -100,7 +99,6 @@ public class Evento {
         this.titulo = titulo;
         this.descricao = descricao;
         this.dataHoraInicio = dataHoraInicio;
-        this.status = status;
         this.perfisDestinados = perfisDestinados;
         this.etapasDestinadas = etapasDestinadas;
         this.modalidadesDestinadas = modalidadesDestinadas;

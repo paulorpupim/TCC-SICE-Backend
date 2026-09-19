@@ -43,31 +43,29 @@ public class EventoService {
         @Transactional
         public EventoResponseDTO criar(CriarEventoDTO dto) {
 
+                validarDestinações(dto);
+
                 Usuario usuarioLogado = usuarioService.obterUsuarioLogado();
 
                 Evento evento = new Evento(
                                 dto.titulo(),
                                 dto.descricao(),
                                 dto.dataHoraInicio(),
-                                dto.status(),
                                 dto.perfisDestinados(),
                                 dto.etapasDestinadas(),
                                 dto.modalidadesDestinadas(),
                                 usuarioLogado);
 
-                if (dto.turmasDestinadasIds() != null) {
+                for (Long turmaId : dto.turmasDestinadasIds()) {
 
-                        for (Long turmaId : dto.turmasDestinadasIds()) {
+                        Turma turma = turmaRepository.findById(turmaId)
+                                        .orElseThrow(() -> new RuntimeException("Turma não encontrada"));
 
-                                Turma turma = turmaRepository.findById(turmaId)
-                                                .orElseThrow(() -> new RuntimeException("Turma não encontrada"));
+                        EventoTurma eventoTurma = new EventoTurma(
+                                        evento,
+                                        turma);
 
-                                EventoTurma eventoTurma = new EventoTurma(
-                                                evento,
-                                                turma);
-
-                                evento.getDestinacoesTurma().add(eventoTurma);
-                        }
+                        evento.getDestinacoesTurma().add(eventoTurma);
                 }
 
                 Evento eventoSalvo = eventoRepository.save(evento);
@@ -75,6 +73,19 @@ public class EventoService {
                 return new EventoResponseDTO(
                                 eventoSalvo,
                                 obterTurmasIds(eventoSalvo));
+        }
+
+        private void validarDestinações(CriarEventoDTO dto) {
+                boolean possuiFiltrosDeAluno = !dto.etapasDestinadas().isEmpty()
+                                || !dto.modalidadesDestinadas().isEmpty()
+                                || !dto.turmasDestinadasIds().isEmpty();
+
+                boolean possuiPerfilAluno = dto.perfisDestinados().contains(PerfilUsuario.ALUNO);
+
+                if (possuiFiltrosDeAluno && !possuiPerfilAluno) {
+                        throw new RuntimeException(
+                                        "Filtros de etapa, modalidade ou turma exigem o perfil ALUNO.");
+                }
         }
 
         @Transactional(readOnly = true)

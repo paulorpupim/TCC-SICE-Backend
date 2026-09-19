@@ -6,7 +6,6 @@ import java.util.Set;
 import com.tccds.sice.enums.Etapa;
 import com.tccds.sice.enums.ModalidadeEnsino;
 import com.tccds.sice.enums.PerfilUsuario;
-import com.tccds.sice.enums.StatusEvento;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -23,8 +22,6 @@ public record CriarEventoDTO(
 
     @NotNull
     LocalDateTime dataHoraInicio,
-
-    StatusEvento status,
 
     @NotNull
     Set<PerfilUsuario> perfisDestinados,
