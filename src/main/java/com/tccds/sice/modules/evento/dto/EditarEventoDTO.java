@@ -12,8 +12,8 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-public record CriarEventoDTO(
-
+public record EditarEventoDTO(
+    
     @NotBlank
     @Size(max = 100)
     String titulo,
@@ -30,7 +30,7 @@ public record CriarEventoDTO(
     @NotEmpty
     @Valid
     Set<CriarEventoDestinoDTO> destinos
-    
+
 ) {
     
 }

@@ -15,6 +15,7 @@ import com.tccds.sice.modules.aluno.Aluno;
 import com.tccds.sice.modules.aluno.AlunoRepository;
 import com.tccds.sice.modules.aluno.matricula.Matricula;
 import com.tccds.sice.modules.evento.dto.CriarEventoDTO;
+import com.tccds.sice.modules.evento.dto.EditarEventoDTO;
 import com.tccds.sice.modules.evento.dto.EventoResponseDTO;
 import com.tccds.sice.modules.evento.evento_destino.EventoDestino;
 import com.tccds.sice.modules.evento.evento_destino_turma.dto.CriarEventoDestinoDTO;
@@ -35,10 +36,22 @@ public class EventoService {
 
         private final UsuarioService usuarioService;
 
+        public Evento buscarEventoId(Long id) {
+                return eventoRepository.findById(id).orElseThrow(
+                                () -> new RuntimeException("Evento não encontrado"));
+        }
+
+        @Transactional(readOnly = true)
+        public EventoResponseDTO buscarEventoPorId(Long id) {
+                Evento evento = buscarEventoId(id);
+
+                return new EventoResponseDTO(evento);
+        }
+
         @Transactional
         public EventoResponseDTO criar(CriarEventoDTO dto) {
 
-                validarDestinos(dto);
+                validarDestinos(dto.destinos());
 
                 Usuario usuarioLogado = usuarioService.obterUsuarioLogado();
 
@@ -76,11 +89,76 @@ public class EventoService {
                                 eventoSalvo);
         }
 
-        private void validarDestinos(CriarEventoDTO dto) {
+        @Transactional
+        public EventoResponseDTO editar(Long id, EditarEventoDTO dto) {
+
+                validarDestinos(dto.destinos());
+
+                Evento evento = eventoRepository.findById(id)
+                                .orElseThrow(() -> new EntidadeNaoEncontradaException(
+                                                "Evento não encontrado!"));
+
+                evento.setTitulo(dto.titulo());
+                evento.setDescricao(dto.descricao());
+                evento.setDataInicio(dto.dataInicio());
+                evento.setHoraInicio(dto.horaInicio());
+
+                evento.getDestinos().clear();
+
+                eventoRepository.flush();
+
+                for (CriarEventoDestinoDTO destinoDTO : dto.destinos()) {
+
+                        EventoDestino destino = new EventoDestino(
+                                        destinoDTO.perfil(),
+                                        destinoDTO.etapas(),
+                                        destinoDTO.modalidades());
+
+                        List<Turma> turmas = turmaRepository.findAllById(
+                                        destinoDTO.turmasIds());
+
+                        if (turmas.size() != destinoDTO.turmasIds().size()) {
+                                throw new EntidadeNaoEncontradaException(
+                                                "Uma ou mais turmas não foram encontradas!");
+                        }
+
+                        for (Turma turma : turmas) {
+                                destino.adicionarTurma(turma);
+                        }
+
+                        evento.adicionarDestino(destino);
+                }
+
+                Evento eventoSalvo = eventoRepository.save(evento);
+
+                return new EventoResponseDTO(eventoSalvo);
+        }
+
+        @Transactional
+        public EventoResponseDTO cancelar(Long id) {
+
+                Evento evento = buscarEventoId(id);
+
+                evento.setStatus(StatusEvento.CANCELADO);
+
+                return new EventoResponseDTO(evento);
+        }
+
+        @Transactional
+        public EventoResponseDTO reativar(Long id) {
+
+                Evento evento = buscarEventoId(id);
+
+                evento.setStatus(StatusEvento.ATIVO);
+
+                return new EventoResponseDTO(evento);
+        }
+
+        private void validarDestinos(Set<CriarEventoDestinoDTO> destinos) {
 
                 Set<PerfilUsuario> perfis = new HashSet<>();
 
-                for (CriarEventoDestinoDTO destino : dto.destinos()) {
+                for (CriarEventoDestinoDTO destino : destinos) {
 
                         if (destino.perfil() != PerfilUsuario.ALUNO
                                         && destino.perfil() != PerfilUsuario.PROFESSOR) {

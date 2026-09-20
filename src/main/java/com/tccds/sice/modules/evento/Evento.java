@@ -79,6 +79,7 @@ public class Evento {
         this.titulo = titulo;
         this.descricao = descricao;
         this.dataInicio = dataInicio;
+        this.horaInicio = horaInicio;
         this.criadoPor = criadoPor;
     }
 
