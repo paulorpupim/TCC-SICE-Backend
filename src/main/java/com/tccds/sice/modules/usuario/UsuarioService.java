@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.tccds.sice.enums.PerfilUsuario;
+import com.tccds.sice.exception.EntidadeNaoEncontradaException;
 import com.tccds.sice.modules.aluno.Aluno;
 import com.tccds.sice.modules.aluno.AlunoRepository;
 import com.tccds.sice.modules.aluno.AlunoService;
@@ -21,6 +22,7 @@ import com.tccds.sice.modules.credencial.CredencialService;
 import com.tccds.sice.modules.turma.Turma;
 import com.tccds.sice.modules.turma.TurmaService;
 import com.tccds.sice.modules.usuario.dto.CriarUsuarioDTO;
+import com.tccds.sice.modules.usuario.dto.EditarUsuarioDTO;
 import com.tccds.sice.modules.usuario.dto.UsuarioResponseDTO;
 
 import lombok.RequiredArgsConstructor;
@@ -29,95 +31,220 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UsuarioService {
 
-    private final UsuarioRepository usuarioRepository;
-    private final MatriculaService matriculaService;
-    private final AlunoRepository alunoRepository;
+        private final UsuarioRepository usuarioRepository;
+        private final MatriculaService matriculaService;
+        private final AlunoRepository alunoRepository;
 
-    private final CredencialService credencialService;
-    private final AlunoService alunoService;
-    private final TurmaService turmaService;
+        private final CredencialService credencialService;
+        private final AlunoService alunoService;
+        private final TurmaService turmaService;
 
-    public Usuario obterUsuarioLogado() {
-        Authentication authentication = SecurityContextHolder
-                .getContext()
-                .getAuthentication();
-
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new RuntimeException("Nenhum usuario encontrado");
+        public Usuario buscarUsuarioId(Long id) {
+                return usuarioRepository.findById(id).orElseThrow(
+                                () -> new EntidadeNaoEncontradaException("Usuario não encontrado"));
         }
 
-        String identificador = authentication.getName();
+        @Transactional(readOnly = true)
+        public UsuarioResponseDTO buscarUsuarioPorId(Long id) {
 
-        return usuarioRepository
-                .findByCredencial_Identificador(identificador)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-    }
+                Usuario usuario = buscarUsuarioId(id);
 
-    public Set<Long> obterTurmasIds(Usuario usuario) {
-        if (usuario.getPerfil() != PerfilUsuario.ALUNO) {
-            return Set.of();
+                Aluno aluno = null;
+
+                if (usuario.getPerfil() == PerfilUsuario.ALUNO) {
+
+                        aluno = alunoRepository.findByUsuario(usuario)
+                                        .orElseThrow(() -> new EntidadeNaoEncontradaException(
+                                                        "Aluno não encontrado"));
+                }
+
+                return new UsuarioResponseDTO(
+                                usuario,
+                                aluno);
         }
 
-        Aluno aluno = alunoRepository.findByUsuario(usuario)
-                .orElseThrow(() -> new RuntimeException("Aluno não encontrado"));
-        
-        return aluno.getMatriculas()
-            .stream()
-            .filter(Matricula::isAtivo)
-            .map(matricula -> matricula.getTurma().getId())
-            .collect(Collectors.toSet());
-        
-    }
+        public Usuario obterUsuarioLogado() {
+                Authentication authentication = SecurityContextHolder
+                                .getContext()
+                                .getAuthentication();
 
-    @Transactional
-    public UsuarioResponseDTO criar(CriarUsuarioDTO dto) {
+                if (authentication == null || !authentication.isAuthenticated()) {
+                        throw new EntidadeNaoEncontradaException("Nenhum usuario encontrado");
+                }
 
-        Credencial credencial = credencialService.criar(dto.identificador(), dto.senha());
+                String identificador = authentication.getName();
 
-        Usuario usuario = new Usuario(
-                dto.nome(),
-                dto.email(),
-                dto.perfil(),
-                credencial);
-
-        Usuario usuarioSalvo = usuarioRepository.save(usuario);
-
-        Set<Long> turmasIds = new HashSet<>();
-
-        if (dto.perfil() == PerfilUsuario.ALUNO) {
-            if (dto.turmasIds() == null || dto.turmasIds().isEmpty()) {
-                throw new RuntimeException("Aluno deve possuir pelo menos uma turma");
-            }
-
-            Aluno aluno = alunoService.criar(usuarioSalvo);
-
-            for (Long turmaId : dto.turmasIds()) {
-
-                Turma turma = turmaService.buscarTurmaId(turmaId);
-                matriculaService.criar(aluno, turma);
-
-                turmasIds.add(turma.getId());
-
-            }
+                return usuarioRepository
+                                .findByCredencial_Identificador(identificador)
+                                .orElseThrow(() -> new EntidadeNaoEncontradaException("Usuário não encontrado"));
         }
 
-        return new UsuarioResponseDTO(
-                usuarioSalvo,
-                turmasIds);
+        @Transactional
+        public UsuarioResponseDTO criar(CriarUsuarioDTO dto) {
 
-    }
+                String senha = "123456";
 
-    public List<UsuarioResponseDTO> listarUsuariosPerfil(PerfilUsuario perfil) {
+                Credencial credencial = credencialService.criar(
+                                dto.identificador(),
+                                senha);
 
-        return usuarioRepository.findByPerfil(perfil)
-                .stream()
-                .map(usuario -> {
-                    Set<Long> turmasIds = obterTurmasIds(usuario);
+                Usuario usuario = new Usuario(
+                                dto.nome(),
+                                dto.email(),
+                                dto.perfil(),
+                                credencial);
 
-                    return new UsuarioResponseDTO(usuario, turmasIds);
-                })
-                .toList();
+                Usuario usuarioSalvo = usuarioRepository.save(usuario);
 
-    }
+                Aluno aluno = null;
+
+                if (dto.perfil() == PerfilUsuario.ALUNO) {
+
+                        if (dto.turmasIds() == null ||
+                                        dto.turmasIds().isEmpty()) {
+                                throw new RuntimeException(
+                                                "Aluno deve possuir pelo menos uma turma");
+                        }
+
+                        aluno = alunoService.criar(usuarioSalvo);
+
+                        for (Long turmaId : dto.turmasIds()) {
+
+                                Turma turma = turmaService.buscarTurmaId(turmaId);
+
+                                matriculaService.criar(
+                                                aluno,
+                                                turma);
+                        }
+                }
+
+                return new UsuarioResponseDTO(
+                                usuarioSalvo,
+                                aluno);
+        }
+
+        @Transactional
+        public UsuarioResponseDTO editar(
+                        Long id,
+                        EditarUsuarioDTO dto) {
+
+                Usuario usuario = buscarUsuarioId(id);
+
+                validarEdicao(usuario, dto);
+
+                usuario.setNome(dto.nome());
+                usuario.setEmail(dto.email());
+
+                usuario.getCredencial()
+                                .setIdentificador(dto.identificador());
+
+                Aluno aluno = null;
+
+                if (usuario.getPerfil() == PerfilUsuario.ALUNO) {
+
+                        aluno = alunoRepository.findByUsuario(usuario)
+                                        .orElseThrow(() -> new EntidadeNaoEncontradaException(
+                                                        "Aluno não encontrado"));
+
+                        atualizarTurmasAluno(
+                                        aluno,
+                                        dto.turmasIds());
+                }
+
+                Usuario usuarioSalvo = usuarioRepository.save(usuario);
+
+                return new UsuarioResponseDTO(
+                                usuarioSalvo,
+                                aluno);
+        }
+
+        private void validarEdicao(
+                        Usuario usuario,
+                        EditarUsuarioDTO dto) {
+
+                if (usuario.getPerfil() == PerfilUsuario.ALUNO
+                                && dto.turmasIds().isEmpty()) {
+                        throw new RuntimeException(
+                                        "Aluno deve possuir pelo menos uma turma.");
+                }
+
+                if (usuario.getPerfil() != PerfilUsuario.ALUNO
+                                && !dto.turmasIds().isEmpty()) {
+                        throw new RuntimeException(
+                                        "Apenas alunos podem possuir turmas.");
+                }
+        }
+
+        private void atualizarTurmasAluno(
+                        Aluno aluno,
+                        Set<Long> novasTurmasIds) {
+
+                aluno.getMatriculas()
+                                .stream()
+                                .filter(Matricula::isAtivo)
+                                .filter(matricula -> !novasTurmasIds.contains(
+                                                matricula.getTurma().getId()))
+                                .forEach(matricula -> matricula.setAtivo(false));
+
+                for (Long turmaId : novasTurmasIds) {
+
+                        Matricula matriculaExistente = aluno.getMatriculas()
+                                        .stream()
+                                        .filter(matricula -> matricula.getTurma()
+                                                        .getId()
+                                                        .equals(turmaId))
+                                        .findFirst()
+                                        .orElse(null);
+
+                        if (matriculaExistente != null) {
+
+                                matriculaExistente.setAtivo(true);
+
+                        } else {
+
+                                Turma turma = turmaService.buscarTurmaId(turmaId);
+
+                                matriculaService.criar(
+                                                aluno,
+                                                turma);
+                        }
+                }
+        }
+
+        @Transactional(readOnly = true)
+        public List<UsuarioResponseDTO> listarUsuariosPerfil(
+                        PerfilUsuario perfil) {
+
+                List<Usuario> usuarios = usuarioRepository.findByPerfil(perfil);
+
+                if (perfil == PerfilUsuario.ALUNO) {
+
+                        return usuarios.stream()
+                                        .map(usuario -> {
+
+                                                Aluno aluno = alunoRepository.findByUsuario(usuario)
+                                                                .orElseThrow(() -> new EntidadeNaoEncontradaException(
+                                                                                "Aluno não encontrado"));
+
+                                                return new UsuarioResponseDTO(
+                                                                usuario,
+                                                                aluno);
+                                        })
+                                        .toList();
+                }
+
+                return usuarios.stream()
+                                .map(usuario -> new UsuarioResponseDTO(
+                                                usuario,
+                                                null))
+                                .toList();
+        }
+
+        @Transactional
+        public void alterarStatus(Long id, boolean ativo) {
+                Usuario usuario = buscarUsuarioId(id);
+
+                usuario.getCredencial().setAtivo(ativo);
+        }
 
 }

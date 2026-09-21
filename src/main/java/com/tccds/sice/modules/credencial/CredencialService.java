@@ -8,14 +8,13 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class CredencialService {
-    
+
     private final PasswordEncoder passwordEncoder;
 
-    public Credencial criar(String identificador, String senha){
+    public Credencial criar(String identificador, String senha) {
         return new Credencial(
-            identificador,
-            passwordEncoder.encode(senha)
-        );
+                identificador,
+                passwordEncoder.encode(senha));
     }
 
 }

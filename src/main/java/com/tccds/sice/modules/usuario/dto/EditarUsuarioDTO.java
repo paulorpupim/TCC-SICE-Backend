@@ -2,14 +2,12 @@ package com.tccds.sice.modules.usuario.dto;
 
 import java.util.Set;
 
-import com.tccds.sice.enums.PerfilUsuario;
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-public record CriarUsuarioDTO(
-        
+public record EditarUsuarioDTO(
+
         @NotBlank
         String identificador,
         
@@ -19,13 +17,10 @@ public record CriarUsuarioDTO(
         
         @NotBlank
         String email,
-        
-        @NotNull
-        PerfilUsuario perfil,
 
         @NotNull
         Set<Long> turmasIds
         
 ) {
-
+    
 }
