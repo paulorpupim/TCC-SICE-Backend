@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.tccds.sice.exception.EntidadeNaoEncontradaException;
 import com.tccds.sice.modules.curso.dto.CriarCursoDTO;
 import com.tccds.sice.modules.curso.dto.CursoResponseDTO;
 import com.tccds.sice.modules.curso.dto.EditarCursoDTO;
@@ -18,7 +19,7 @@ public class CursoService {
 
     public Curso buscarCursoId(Long id) {
         return cursoRepository.findById(id).orElseThrow(
-                () -> new RuntimeException("Curso não encontrado"));
+                () -> new EntidadeNaoEncontradaException("Curso não encontrado"));
     }
 
     public CursoResponseDTO buscarCursoPorId(Long id) {
@@ -59,9 +60,7 @@ public class CursoService {
 
     public void alterarStatus(Long id, boolean ativo) {
 
-        Curso curso = cursoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Curso não encontrado"));
-
+        Curso curso = buscarCursoId(id);
         curso.setAtivo(ativo);
 
         cursoRepository.save(curso);
