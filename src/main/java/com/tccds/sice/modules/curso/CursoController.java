@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.tccds.sice.dto.AlterarStatusDTO;
 import com.tccds.sice.modules.curso.dto.CriarCursoDTO;
 import com.tccds.sice.modules.curso.dto.CursoResponseDTO;
 import com.tccds.sice.modules.curso.dto.EditarCursoDTO;
-import com.tccds.sice.modules.dto.AlterarStatusDTO;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

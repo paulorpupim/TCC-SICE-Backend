@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.tccds.sice.modules.dto.AlterarStatusDTO;
+import com.tccds.sice.dto.AlterarStatusDTO;
 import com.tccds.sice.modules.turma.dto.CriarTurmaDTO;
 import com.tccds.sice.modules.turma.dto.EditarTurmaDTO;
 import com.tccds.sice.modules.turma.dto.TurmaResponseDTO;

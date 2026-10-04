@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.tccds.sice.dto.AlterarStatusDTO;
 import com.tccds.sice.enums.PerfilUsuario;
-import com.tccds.sice.modules.dto.AlterarStatusDTO;
 import com.tccds.sice.modules.usuario.dto.CriarUsuarioDTO;
 import com.tccds.sice.modules.usuario.dto.EditarUsuarioDTO;
 import com.tccds.sice.modules.usuario.dto.UsuarioResponseDTO;

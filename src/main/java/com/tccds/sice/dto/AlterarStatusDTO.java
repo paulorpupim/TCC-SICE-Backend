@@ -1,4 +1,4 @@
-package com.tccds.sice.modules.dto;
+package com.tccds.sice.dto;
 
 public record AlterarStatusDTO(
 
