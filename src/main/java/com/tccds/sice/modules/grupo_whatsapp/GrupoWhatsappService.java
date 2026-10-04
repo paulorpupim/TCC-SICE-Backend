@@ -3,15 +3,16 @@ package com.tccds.sice.modules.grupo_whatsapp;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.tccds.sice.enums.TipoGrupo;
+import com.tccds.sice.exception.EntidadeNaoEncontradaException;
 import com.tccds.sice.modules.grupo_whatsapp.dto.CriarGrupoWhatsappDTO;
 import com.tccds.sice.modules.grupo_whatsapp.dto.EditarGrupoWhatsappDTO;
 import com.tccds.sice.modules.grupo_whatsapp.dto.GrupoWhatsappResponseDTO;
 import com.tccds.sice.modules.turma.Turma;
-import com.tccds.sice.modules.turma.TurmaRepository;
+import com.tccds.sice.modules.turma.TurmaService;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -19,24 +20,23 @@ import lombok.RequiredArgsConstructor;
 public class GrupoWhatsappService {
 
     private final GrupoWhatsappRepository grupoRepository;
-    private final TurmaRepository turmaRepository;
+    private final TurmaService turmaService;
 
-    @Transactional(readOnly = true)
     public GrupoWhatsapp buscarGrupoId(Long id) {
+
         return grupoRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Grupo não encontrado."));
+                        new EntidadeNaoEncontradaException(
+                                "Grupo do WhatsApp não encontrado"));
     }
 
-    @Transactional(readOnly = true)
-    public List<GrupoWhatsappResponseDTO> listarTodos() {
-        return grupoRepository.findAll()
-                .stream()
-                .map(GrupoWhatsappResponseDTO::new)
-                .toList();
+    public GrupoWhatsappResponseDTO buscarGrupoPorId(Long id) {
+
+        GrupoWhatsapp grupo = buscarGrupoId(id);
+
+        return new GrupoWhatsappResponseDTO(grupo);
     }
 
-    @Transactional
     public GrupoWhatsappResponseDTO criar(
             CriarGrupoWhatsappDTO dto) {
 
@@ -47,7 +47,7 @@ public class GrupoWhatsappService {
                     "Já existe um grupo com esse identificador.");
         }
 
-        Turma turma = validarETrazerTurma(
+        Turma turma = validarTurmaCriacao(
                 dto.tipo(),
                 dto.turmaId());
 
@@ -57,12 +57,63 @@ public class GrupoWhatsappService {
                 dto.tipo(),
                 turma);
 
-        grupoRepository.save(grupo);
+        GrupoWhatsapp grupoSalvo =
+                grupoRepository.save(grupo);
 
-        return new GrupoWhatsappResponseDTO(grupo);
+        return new GrupoWhatsappResponseDTO(grupoSalvo);
     }
 
-    private Turma validarETrazerTurma(
+    @Transactional
+    public GrupoWhatsappResponseDTO editar(
+            Long id,
+            EditarGrupoWhatsappDTO dto) {
+
+        GrupoWhatsapp grupo = buscarGrupoId(id);
+
+        if (grupoRepository.existsByIdentificadorAndIdNot(
+                dto.identificador(),
+                id)) {
+
+            throw new RuntimeException(
+                    "Já existe um grupo com esse identificador.");
+        }
+
+        Turma turma = validarTurmaEdicao(
+                grupo,
+                dto.tipo(),
+                dto.turmaId());
+
+        grupo.setNome(dto.nome());
+        grupo.setIdentificador(dto.identificador());
+        grupo.setTipo(dto.tipo());
+        grupo.setTurma(turma);
+
+        GrupoWhatsapp grupoSalvo =
+                grupoRepository.save(grupo);
+
+        return new GrupoWhatsappResponseDTO(grupoSalvo);
+    }
+
+    public List<GrupoWhatsappResponseDTO> listarTodos() {
+
+        return grupoRepository.findAll()
+                .stream()
+                .map(GrupoWhatsappResponseDTO::new)
+                .toList();
+    }
+
+    public void alterarStatus(
+            Long id,
+            boolean ativo) {
+
+        GrupoWhatsapp grupo = buscarGrupoId(id);
+
+        grupo.setAtivo(ativo);
+
+        grupoRepository.save(grupo);
+    }
+
+    private Turma validarTurmaCriacao(
             TipoGrupo tipo,
             Long turmaId) {
 
@@ -78,10 +129,7 @@ public class GrupoWhatsappService {
                         "Essa turma já possui um grupo do WhatsApp.");
             }
 
-            return turmaRepository.findById(turmaId)
-                    .orElseThrow(() ->
-                            new RuntimeException(
-                                    "Turma não encontrada."));
+            return turmaService.buscarTurmaId(turmaId);
         }
 
         if (turmaId != null) {
@@ -97,35 +145,7 @@ public class GrupoWhatsappService {
         return null;
     }
 
-    @Transactional
-    public GrupoWhatsappResponseDTO atualizar(
-            Long id,
-            EditarGrupoWhatsappDTO dto) {
-
-        GrupoWhatsapp grupo = buscarGrupoId(id);
-
-        if (grupoRepository.existsByIdentificadorAndIdNot(
-                dto.identificador(),
-                id)) {
-
-            throw new RuntimeException(
-                    "Já existe um grupo com esse identificador.");
-        }
-
-        Turma turma = resolverTurmaParaAtualizacao(
-                grupo,
-                dto.tipo(),
-                dto.turmaId());
-
-        grupo.setNome(dto.nome());
-        grupo.setIdentificador(dto.identificador());
-        grupo.setTipo(dto.tipo());
-        grupo.setTurma(turma);
-
-        return new GrupoWhatsappResponseDTO(grupo);
-    }
-
-    private Turma resolverTurmaParaAtualizacao(
+    private Turma validarTurmaEdicao(
             GrupoWhatsapp grupo,
             TipoGrupo tipo,
             Long turmaId) {
@@ -145,10 +165,7 @@ public class GrupoWhatsappService {
                         "Essa turma já possui um grupo do WhatsApp.");
             }
 
-            return turmaRepository.findById(turmaId)
-                    .orElseThrow(() ->
-                            new RuntimeException(
-                                    "Turma não encontrada."));
+            return turmaService.buscarTurmaId(turmaId);
         }
 
         if (turmaId != null) {
@@ -165,15 +182,5 @@ public class GrupoWhatsappService {
         }
 
         return null;
-    }
-
-    @Transactional
-    public void alterarStatus(
-            Long id,
-            boolean ativo) {
-
-        GrupoWhatsapp grupo = buscarGrupoId(id);
-
-        grupo.setAtivo(ativo);
     }
 }

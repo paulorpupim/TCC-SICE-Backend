@@ -25,14 +25,22 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/grupos-whatsapp")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class GrupoWhatsappController {
 
     private final GrupoWhatsappService grupoService;
 
-    @PostMapping
-    public ResponseEntity<GrupoWhatsappResponseDTO> criar(
-            @RequestBody @Valid CriarGrupoWhatsappDTO dto) {
+    @GetMapping("/{id}")
+    public ResponseEntity<GrupoWhatsappResponseDTO> buscarPorId(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                grupoService.buscarGrupoPorId(id));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/cadastrarGrupo")
+    public ResponseEntity<GrupoWhatsappResponseDTO> cadastrar(
+            @Valid @RequestBody CriarGrupoWhatsappDTO dto) {
 
         GrupoWhatsappResponseDTO grupo =
                 grupoService.criar(dto);
@@ -42,19 +50,25 @@ public class GrupoWhatsappController {
                 .body(grupo);
     }
 
-    @GetMapping
-    public List<GrupoWhatsappResponseDTO> listar() {
-        return grupoService.listarTodos();
-    }
-
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public GrupoWhatsappResponseDTO atualizar(
+    public ResponseEntity<GrupoWhatsappResponseDTO> editar(
             @PathVariable Long id,
-            @RequestBody @Valid EditarGrupoWhatsappDTO dto) {
+            @Valid @RequestBody EditarGrupoWhatsappDTO dto) {
 
-        return grupoService.atualizar(id, dto);
+        return ResponseEntity.ok(
+                grupoService.editar(id, dto));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/listarGrupos")
+    public ResponseEntity<List<GrupoWhatsappResponseDTO>> listar() {
+
+        return ResponseEntity.ok(
+                grupoService.listarTodos());
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/status")
     public ResponseEntity<Void> alterarStatus(
             @PathVariable Long id,
