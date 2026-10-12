@@ -77,6 +77,8 @@ public class EventoController {
         return eventoService.cancelar(id);
     }
 
+    
+
     @PatchMapping("/{id}/reativar")
     public EventoResponseDTO reativar(
             @PathVariable Long id) {

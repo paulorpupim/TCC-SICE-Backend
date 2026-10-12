@@ -27,315 +27,242 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EnvioAvisoService {
 
-    private final EnvioAvisoRepository envioAvisoRepository;
-    private final GrupoWhatsappRepository grupoWhatsappRepository;
-    private final BotWhatsappService botWhatsappService;
+        private final EnvioAvisoRepository envioAvisoRepository;
+        private final GrupoWhatsappRepository grupoWhatsappRepository;
+        private final BotWhatsappService botWhatsappService;
 
-    @Transactional
-    public void criarEnviosParaEvento(Evento evento) {
+        @Transactional
+        public void criarEnviosParaEvento(Evento evento) {
 
-        Set<GrupoWhatsapp> grupos =
-                resolverGrupos(evento);
+                Set<GrupoWhatsapp> grupos = resolverGrupos(evento);
 
-        for (GrupoWhatsapp grupo : grupos) {
+                for (GrupoWhatsapp grupo : grupos) {
 
-            boolean jaExiste =
-                    envioAvisoRepository
-                            .existsByEventoIdAndGrupoWhatsappId(
-                                    evento.getId(),
-                                    grupo.getId()
-                            );
+                        boolean jaExiste = envioAvisoRepository
+                                        .existsByEventoIdAndGrupoWhatsappId(
+                                                        evento.getId(),
+                                                        grupo.getId());
 
-            if (jaExiste) {
-                continue;
-            }
+                        if (jaExiste) {
+                                continue;
+                        }
 
-            EnvioAviso envio =
-                    new EnvioAviso(
-                            evento,
-                            grupo
-                    );
+                        EnvioAviso envio = new EnvioAviso(
+                                        evento,
+                                        grupo);
 
-            envioAvisoRepository.save(envio);
-        }
-    }
-
-    public void processarEnvio(EnvioAviso envio) {
-
-        if (envio.getStatus()
-                != StatusEnvioAviso.PENDENTE) {
-
-            return;
+                        envioAvisoRepository.save(envio);
+                }
         }
 
+        public void processarEnvio(EnvioAviso envio) {
 
-        envio.setTentativas(
-                envio.getTentativas() + 1
-        );
+                if (envio.getStatus() != StatusEnvioAviso.PENDENTE) {
 
+                        return;
+                }
 
-        envio.setUltimaTentativaEm(
-                LocalDateTime.now(
-                        ZoneId.of(
-                                "America/Sao_Paulo"
-                        )
-                )
-        );
+                envio.setTentativas(
+                                envio.getTentativas() + 1);
 
+                envio.setUltimaTentativaEm(
+                                LocalDateTime.now(
+                                                ZoneId.of(
+                                                                "America/Sao_Paulo")));
 
-        try {
+                try {
 
-            botWhatsappService.enviar(envio);
+                        botWhatsappService.enviar(envio);
 
+                        envio.setStatus(
+                                        StatusEnvioAviso.ENVIADO);
 
-            envio.setStatus(
-                    StatusEnvioAviso.ENVIADO
-            );
+                        envio.setEnviadoEm(
+                                        LocalDateTime.now(
+                                                        ZoneId.of(
+                                                                        "America/Sao_Paulo")));
 
+                        envio.setUltimoErro(null);
 
-            envio.setEnviadoEm(
-                    LocalDateTime.now(
-                            ZoneId.of(
-                                    "America/Sao_Paulo"
-                            )
-                    )
-            );
+                } catch (Exception exception) {
 
+                        envio.setUltimoErro(
+                                        exception.getMessage());
 
-            envio.setUltimoErro(null);
+                        if (envio.getTentativas() >= 3) {
 
-
-        } catch (Exception exception) {
-
-            envio.setUltimoErro(
-                    exception.getMessage()
-            );
-
-
-            if (envio.getTentativas() >= 3) {
-
-                envio.setStatus(
-                        StatusEnvioAviso.ERRO
-                );
-            }
-        }
-    }
-
-    @Transactional
-    public void processarEnvioPorId(Long id) {
-
-        EnvioAviso envio =
-                envioAvisoRepository
-                        .findById(id)
-                        .orElseThrow();
-
-        processarEnvio(envio);
-    }
-
-    @Transactional
-    public void processarEnviosPendentesDoEvento(
-            Long eventoId
-    ) {
-
-        List<EnvioAviso> envios =
-                envioAvisoRepository
-                        .findByEventoIdAndStatus(
-                                eventoId,
-                                StatusEnvioAviso.PENDENTE
-                        );
-
-        for (EnvioAviso envio : envios) {
-
-            processarEnvio(envio);
-        }
-    }
-
-    private Set<GrupoWhatsapp> resolverGrupos(
-            Evento evento
-    ) {
-
-        Set<GrupoWhatsapp> grupos =
-                new HashSet<>();
-
-
-        for (EventoDestino destino
-                : evento.getDestinos()) {
-
-            if (destino.getPerfil()
-                    == PerfilUsuario.PROFESSOR) {
-
-                grupoWhatsappRepository
-                        .findByTipoAndAtivoTrue(
-                                TipoGrupo.GERAL_PROFESSORES
-                        )
-                        .ifPresent(grupos::add);
-
-                continue;
-            }
-
-            if (destino.getPerfil()
-                    == PerfilUsuario.ALUNO) {
-
-                resolverGruposAlunos(
-                        destino,
-                        grupos
-                );
-            }
+                                envio.setStatus(
+                                                StatusEnvioAviso.ERRO);
+                        }
+                }
         }
 
+        @Transactional
+        public void processarEnvioPorId(Long id) {
 
-        return grupos;
-    }
+                EnvioAviso envio = envioAvisoRepository
+                                .findById(id)
+                                .orElseThrow();
 
-
-    private void resolverGruposAlunos(
-            EventoDestino destino,
-            Set<GrupoWhatsapp> grupos
-    ) {
-
-        if (destino.getDestinacoesTurma()
-                .isEmpty()) {
-
-            grupoWhatsappRepository
-                    .findByTipoAndAtivoTrue(
-                            TipoGrupo.GERAL_ALUNOS
-                    )
-                    .ifPresent(grupos::add);
-
-            return;
+                processarEnvio(envio);
         }
 
-        for (EventoDestinoTurma destinacao
-                : destino.getDestinacoesTurma()) {
+        @Transactional
+        public void processarEnviosPendentesDoEvento(
+                        Long eventoId) {
 
-            Long turmaId =
-                    destinacao
-                            .getTurma()
-                            .getId();
+                List<EnvioAviso> envios = envioAvisoRepository
+                                .findByEventoIdAndStatus(
+                                                eventoId,
+                                                StatusEnvioAviso.PENDENTE);
 
-            grupoWhatsappRepository
-                    .findByTurmaIdAndAtivoTrue(
-                            turmaId
-                    )
-                    .ifPresent(grupos::add);
-        }
-    }
+                for (EnvioAviso envio : envios) {
 
-    @Transactional
-    public void sincronizarAposEdicao(
-            Evento evento,
-            boolean dataAlterada
-    ) {
-
-        Set<GrupoWhatsapp> gruposAtuais =
-                resolverGrupos(evento);
-
-
-        List<EnvioAviso> enviosExistentes =
-                envioAvisoRepository
-                        .findByEventoId(
-                                evento.getId()
-                        );
-
-
-        Set<Long> gruposAtuaisIds =
-                gruposAtuais.stream()
-                        .map(GrupoWhatsapp::getId)
-                        .collect(Collectors.toSet());
-
-        for (EnvioAviso envio
-                : enviosExistentes) {
-
-            Long grupoId =
-                    envio
-                            .getGrupoWhatsapp()
-                            .getId();
-
-
-            if (!gruposAtuaisIds.contains(
-                    grupoId
-            )) {
-
-                envioAvisoRepository
-                        .delete(envio);
-            }
+                        processarEnvio(envio);
+                }
         }
 
-        for (GrupoWhatsapp grupo
-                : gruposAtuais) {
+        private Set<GrupoWhatsapp> resolverGrupos(
+                        Evento evento) {
 
-            EnvioAviso envioExistente =
-                    enviosExistentes.stream()
-                            .filter(envio ->
-                                    envio
-                                            .getGrupoWhatsapp()
-                                            .getId()
-                                            .equals(
-                                                    grupo.getId()
-                                            )
-                            )
-                            .findFirst()
-                            .orElse(null);
+                Set<GrupoWhatsapp> grupos = new HashSet<>();
 
-            if (envioExistente == null) {
+                for (EventoDestino destino : evento.getDestinos()) {
 
-                EnvioAviso novoEnvio =
-                        new EnvioAviso(
-                                evento,
-                                grupo
-                        );
+                        if (destino.getPerfil() == PerfilUsuario.PROFESSOR) {
 
-                envioAvisoRepository
-                        .save(novoEnvio);
+                                grupoWhatsappRepository
+                                                .findByTipoAndAtivoTrue(
+                                                                TipoGrupo.GERAL_PROFESSORES)
+                                                .ifPresent(grupos::add);
 
-                continue;
-            }
+                                continue;
+                        }
 
-            if (dataAlterada) {
+                        if (destino.getPerfil() == PerfilUsuario.ALUNO) {
 
-                envioExistente.setStatus(
-                        StatusEnvioAviso.PENDENTE
-                );
+                                resolverGruposAlunos(
+                                                destino,
+                                                grupos);
+                        }
+                }
 
-                envioExistente.setTentativas(0);
-
-                envioExistente
-                        .setUltimaTentativaEm(null);
-
-                envioExistente
-                        .setEnviadoEm(null);
-
-                envioExistente
-                        .setUltimoErro(null);
-            }
-        }
-    }
-
-    @Transactional
-    public void processarSeForHoje(
-            Evento evento
-    ) {
-
-        LocalDate hoje =
-                LocalDate.now(
-                        ZoneId.of(
-                                "America/Sao_Paulo"
-                        )
-                );
-
-
-        if (!evento.getDataAviso()
-                .equals(hoje)) {
-
-            return;
+                return grupos;
         }
 
+        private void resolverGruposAlunos(
+                        EventoDestino destino,
+                        Set<GrupoWhatsapp> grupos) {
 
-        criarEnviosParaEvento(evento);
+                if (destino.getDestinacoesTurma()
+                                .isEmpty()) {
 
+                        grupoWhatsappRepository
+                                        .findByTipoAndAtivoTrue(
+                                                        TipoGrupo.GERAL_ALUNOS)
+                                        .ifPresent(grupos::add);
 
-        processarEnviosPendentesDoEvento(
-                evento.getId()
-        );
-    }
+                        return;
+                }
+
+                for (EventoDestinoTurma destinacao : destino.getDestinacoesTurma()) {
+
+                        Long turmaId = destinacao
+                                        .getTurma()
+                                        .getId();
+
+                        grupoWhatsappRepository
+                                        .findByTurmaIdAndAtivoTrue(
+                                                        turmaId)
+                                        .ifPresent(grupos::add);
+                }
+        }
+
+        @Transactional
+        public void sincronizarAposEdicao(
+                        Evento evento,
+                        boolean dataAlterada) {
+
+                Set<GrupoWhatsapp> gruposAtuais = resolverGrupos(evento);
+
+                List<EnvioAviso> enviosExistentes = envioAvisoRepository
+                                .findByEventoId(
+                                                evento.getId());
+
+                Set<Long> gruposAtuaisIds = gruposAtuais.stream()
+                                .map(GrupoWhatsapp::getId)
+                                .collect(Collectors.toSet());
+
+                for (EnvioAviso envio : enviosExistentes) {
+
+                        Long grupoId = envio
+                                        .getGrupoWhatsapp()
+                                        .getId();
+
+                        if (!gruposAtuaisIds.contains(
+                                        grupoId)) {
+
+                                envioAvisoRepository
+                                                .delete(envio);
+                        }
+                }
+
+                for (GrupoWhatsapp grupo : gruposAtuais) {
+
+                        EnvioAviso envioExistente = enviosExistentes.stream()
+                                        .filter(envio -> envio
+                                                        .getGrupoWhatsapp()
+                                                        .getId()
+                                                        .equals(
+                                                                        grupo.getId()))
+                                        .findFirst()
+                                        .orElse(null);
+
+                        if (envioExistente == null) {
+
+                                EnvioAviso novoEnvio = new EnvioAviso(
+                                                evento,
+                                                grupo);
+
+                                envioAvisoRepository
+                                                .save(novoEnvio);
+
+                                continue;
+                        }
+
+                        if (dataAlterada) {
+
+                                envioExistente.setStatus(
+                                                StatusEnvioAviso.PENDENTE);
+
+                                envioExistente.setTentativas(0);
+
+                                envioExistente
+                                                .setUltimaTentativaEm(null);
+
+                                envioExistente
+                                                .setEnviadoEm(null);
+
+                                envioExistente
+                                                .setUltimoErro(null);
+                        }
+                }
+        }
+
+        @Transactional
+        public void processarSeDataAvisoChegou(Evento evento) {
+
+                LocalDate hoje = LocalDate.now(
+                                ZoneId.of("America/Sao_Paulo"));
+
+                if (evento.getDataAviso().isAfter(hoje)) {
+                        return;
+                }
+
+                criarEnviosParaEvento(evento);
+
+                processarEnviosPendentesDoEvento(
+                                evento.getId());
+        }
+
 }

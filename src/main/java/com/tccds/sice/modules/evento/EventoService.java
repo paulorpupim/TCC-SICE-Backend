@@ -94,8 +94,7 @@ public class EventoService {
 
                 Evento salvo = eventoRepository.save(evento);
 
-                envioAvisoService.processarSeForHoje(
-                                salvo);
+                envioAvisoService.processarSeDataAvisoChegou(evento);
 
                 return new EventoResponseDTO(salvo);
         }
@@ -154,8 +153,7 @@ public class EventoService {
                                 eventoSalvo,
                                 dataAlterada);
 
-                envioAvisoService.processarSeForHoje(
-                                eventoSalvo);
+                envioAvisoService.processarSeDataAvisoChegou(evento);
 
                 return new EventoResponseDTO(eventoSalvo);
         }
@@ -164,6 +162,11 @@ public class EventoService {
         public EventoResponseDTO cancelar(Long id) {
 
                 Evento evento = buscarEventoId(id);
+
+                if (evento.getStatus() != StatusEvento.ATIVO) {
+                        throw new RuntimeException(
+                                        "Apenas eventos ativos podem ser cancelados.");
+                }
 
                 evento.setStatus(StatusEvento.CANCELADO);
 
@@ -175,9 +178,84 @@ public class EventoService {
 
                 Evento evento = buscarEventoId(id);
 
+                if (evento.getStatus() == StatusEvento.ATIVO) {
+                        return new EventoResponseDTO(evento);
+                }
+
                 evento.setStatus(StatusEvento.ATIVO);
 
+                envioAvisoService.processarSeDataAvisoChegou(evento);
+
                 return new EventoResponseDTO(evento);
+        }
+
+        @Transactional
+        public EventoResponseDTO desativar(Long id) {
+
+                Evento evento = buscarEventoId(id);
+
+                if (evento.getStatus() == StatusEvento.DESATIVADO) {
+                        return new EventoResponseDTO(evento);
+                }
+
+                evento.setStatus(StatusEvento.DESATIVADO);
+
+                return new EventoResponseDTO(evento);
+        }
+
+        @Transactional(readOnly = true)
+        public List<EventoResponseDTO> listarTodos() {
+
+                return eventoRepository.findAll()
+                                .stream()
+                                .map(EventoResponseDTO::new)
+                                .toList();
+        }
+
+        @Transactional(readOnly = true)
+        public List<EventoResponseDTO> listarEventosPorPerfil() {
+
+                Usuario usuario = usuarioService.obterUsuarioLogado();
+
+                List<Evento> eventos = eventoRepository
+                                .findByStatusInOrderByDataInicioAscHoraInicioAsc(
+                                                List.of(
+                                                                StatusEvento.ATIVO,
+                                                                StatusEvento.CANCELADO));
+
+                PerfilUsuario perfil = usuario.getPerfil();
+
+                if (perfil == PerfilUsuario.ADMIN
+                                || perfil == PerfilUsuario.SECRETARIA) {
+
+                        return eventos.stream()
+                                        .map(EventoResponseDTO::new)
+                                        .toList();
+                }
+
+                if (perfil == PerfilUsuario.PROFESSOR) {
+
+                        return eventos.stream()
+                                        .filter(this::destinadoAProfessor)
+                                        .map(EventoResponseDTO::new)
+                                        .toList();
+                }
+
+                if (perfil == PerfilUsuario.ALUNO) {
+
+                        Aluno aluno = alunoRepository.findByUsuario(usuario)
+                                        .orElseThrow(() -> new EntidadeNaoEncontradaException(
+                                                        "Aluno não encontrado"));
+
+                        return eventos.stream()
+                                        .filter(evento -> alunoPodeVisualizar(
+                                                        evento,
+                                                        aluno))
+                                        .map(EventoResponseDTO::new)
+                                        .toList();
+                }
+
+                return List.of();
         }
 
         private void validarDestinos(
@@ -213,58 +291,6 @@ public class EventoService {
                                 }
                         }
                 }
-        }
-
-        @Transactional(readOnly = true)
-        public List<EventoResponseDTO> listarTodos() {
-
-                return eventoRepository.findAll()
-                                .stream()
-                                .map(EventoResponseDTO::new)
-                                .toList();
-        }
-
-        @Transactional(readOnly = true)
-        public List<EventoResponseDTO> listarEventosPorPerfil() {
-
-                Usuario usuario = usuarioService.obterUsuarioLogado();
-
-                List<Evento> eventos = eventoRepository.findByStatus(
-                                StatusEvento.ATIVO);
-
-                PerfilUsuario perfil = usuario.getPerfil();
-
-                if (perfil == PerfilUsuario.ADMIN
-                                || perfil == PerfilUsuario.SECRETARIA) {
-
-                        return eventos.stream()
-                                        .map(EventoResponseDTO::new)
-                                        .toList();
-                }
-
-                if (perfil == PerfilUsuario.PROFESSOR) {
-
-                        return eventos.stream()
-                                        .filter(this::destinadoAProfessor)
-                                        .map(EventoResponseDTO::new)
-                                        .toList();
-                }
-
-                if (perfil == PerfilUsuario.ALUNO) {
-
-                        Aluno aluno = alunoRepository.findByUsuario(usuario)
-                                        .orElseThrow(() -> new EntidadeNaoEncontradaException(
-                                                        "Aluno não encontrado"));
-
-                        return eventos.stream()
-                                        .filter(evento -> alunoPodeVisualizar(
-                                                        evento,
-                                                        aluno))
-                                        .map(EventoResponseDTO::new)
-                                        .toList();
-                }
-
-                return List.of();
         }
 
         private boolean destinadoAProfessor(
@@ -337,4 +363,5 @@ public class EventoService {
                                         "A data do evento não pode estar no passado.");
                 }
         }
+
 }

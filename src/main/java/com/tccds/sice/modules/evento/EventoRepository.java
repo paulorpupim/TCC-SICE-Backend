@@ -10,16 +10,22 @@ import com.tccds.sice.enums.StatusEvento;
 
 public interface EventoRepository extends JpaRepository<Evento, Long> {
 
-    List<Evento> findByStatus(StatusEvento status);
+        @EntityGraph(attributePaths = {
+                        "destinos",
+                        "destinos.destinacoesTurma",
+                        "destinos.destinacoesTurma.turma"
+        })
+        List<Evento> findByStatusInOrderByDataInicioAscHoraInicioAsc(
+                        List<StatusEvento> status);
 
-    @EntityGraph(attributePaths = {
-            "destinos",
-            "destinos.destinacoesTurma",
-            "destinos.destinacoesTurma.turma"
-    })
-    List<Evento> findByStatusAndDataAvisoLessThanEqualAndDataInicioGreaterThanEqual(
-            StatusEvento status,
-            LocalDate dataAviso,
-            LocalDate dataInicio);
+        @EntityGraph(attributePaths = {
+                        "destinos",
+                        "destinos.destinacoesTurma",
+                        "destinos.destinacoesTurma.turma"
+        })
+        List<Evento> findByStatusAndDataAvisoLessThanEqualAndDataInicioGreaterThanEqual(
+                        StatusEvento status,
+                        LocalDate dataAviso,
+                        LocalDate dataInicio);
 
 }
