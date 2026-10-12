@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.tccds.sice.modules.envio_aviso.EnvioAvisoService;
 import com.tccds.sice.modules.evento.dto.CriarEventoDTO;
 import com.tccds.sice.modules.evento.dto.EditarEventoDTO;
 import com.tccds.sice.modules.evento.dto.EventoResponseDTO;
@@ -28,7 +27,6 @@ import lombok.RequiredArgsConstructor;
 public class EventoController {
 
     private final EventoService eventoService;
-    private final EnvioAvisoService envioAvisoService;
 
     @PostMapping("/cadastrarEvento")
     @PreAuthorize("hasAnyRole('SECRETARIA', 'ADMIN')")

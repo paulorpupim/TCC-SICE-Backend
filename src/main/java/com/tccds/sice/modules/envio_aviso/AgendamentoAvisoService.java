@@ -29,6 +29,7 @@ public class AgendamentoAvisoService {
     @Scheduled(
             cron = "0 0 7 * * *",
             zone = "America/Sao_Paulo"
+        //     fixedRate = 10000
     )
     public void processarAvisosDoDia() {
 
