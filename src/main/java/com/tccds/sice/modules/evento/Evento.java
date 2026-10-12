@@ -3,6 +3,7 @@ package com.tccds.sice.modules.evento;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -52,6 +53,9 @@ public class Evento {
     private LocalTime horaInicio;
 
     @Column(nullable = false)
+    private LocalDate dataAviso;
+
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private StatusEvento status = StatusEvento.ATIVO;
 
@@ -63,7 +67,7 @@ public class Evento {
     private LocalDateTime criadoEm;
 
     @UpdateTimestamp
-    private LocalDateTime atualizadoEm;
+    private LocalDateTime atualizadoEm; // LEMBRAR DE EXCLUIR ISSO SE N FOR NECESSÁRIO PAULO
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "criado_por_id", nullable = false)
@@ -81,6 +85,22 @@ public class Evento {
         this.dataInicio = dataInicio;
         this.horaInicio = horaInicio;
         this.criadoPor = criadoPor;
+
+        calcularDataAviso();
+    }
+
+    public void calcularDataAviso() {
+
+        LocalDate hoje = LocalDate.now(
+                ZoneId.of("America/Sao_Paulo"));
+
+        LocalDate dataCalculada = dataInicio.minusDays(3);
+
+        if (dataCalculada.isAfter(hoje)) {
+            this.dataAviso = dataCalculada;
+        } else {
+            this.dataAviso = hoje;
+        }
     }
 
     public void adicionarDestino(EventoDestino destino) {

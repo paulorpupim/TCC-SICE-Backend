@@ -1,5 +1,7 @@
 package com.tccds.sice.modules.evento;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -13,6 +15,7 @@ import com.tccds.sice.exception.EntidadeNaoEncontradaException;
 import com.tccds.sice.modules.aluno.Aluno;
 import com.tccds.sice.modules.aluno.AlunoRepository;
 import com.tccds.sice.modules.aluno.matricula.Matricula;
+import com.tccds.sice.modules.envio_aviso.EnvioAvisoService;
 import com.tccds.sice.modules.evento.dto.CriarEventoDTO;
 import com.tccds.sice.modules.evento.dto.EditarEventoDTO;
 import com.tccds.sice.modules.evento.dto.EventoResponseDTO;
@@ -34,14 +37,18 @@ public class EventoService {
         private final AlunoRepository alunoRepository;
 
         private final UsuarioService usuarioService;
+        private final EnvioAvisoService envioAvisoService;
 
         public Evento buscarEventoId(Long id) {
-                return eventoRepository.findById(id).orElseThrow(
-                                () -> new RuntimeException("Evento não encontrado"));
+
+                return eventoRepository.findById(id)
+                                .orElseThrow(() -> new EntidadeNaoEncontradaException(
+                                                "Evento não encontrado"));
         }
 
         @Transactional(readOnly = true)
         public EventoResponseDTO buscarEventoPorId(Long id) {
+
                 Evento evento = buscarEventoId(id);
 
                 return new EventoResponseDTO(evento);
@@ -51,6 +58,7 @@ public class EventoService {
         public EventoResponseDTO criar(CriarEventoDTO dto) {
 
                 validarDestinos(dto.destinos());
+                validarDataEvento(dto.dataInicio());
 
                 Usuario usuarioLogado = usuarioService.obterUsuarioLogado();
 
@@ -68,9 +76,11 @@ public class EventoService {
                                         destinoDTO.etapas(),
                                         destinoDTO.modalidades());
 
-                        List<Turma> turmas = turmaRepository.findAllById(destinoDTO.turmasIds());
+                        List<Turma> turmas = turmaRepository.findAllById(
+                                        destinoDTO.turmasIds());
 
                         if (turmas.size() != destinoDTO.turmasIds().size()) {
+
                                 throw new EntidadeNaoEncontradaException(
                                                 "Uma ou mais turmas não foram encontradas!");
                         }
@@ -82,25 +92,32 @@ public class EventoService {
                         evento.adicionarDestino(destino);
                 }
 
-                Evento eventoSalvo = eventoRepository.save(evento);
+                Evento salvo = eventoRepository.save(evento);
 
-                return new EventoResponseDTO(
-                                eventoSalvo);
+                envioAvisoService.processarSeForHoje(
+                                salvo);
+
+                return new EventoResponseDTO(salvo);
         }
 
         @Transactional
-        public EventoResponseDTO editar(Long id, EditarEventoDTO dto) {
+        public EventoResponseDTO editar(
+                        Long id,
+                        EditarEventoDTO dto) {
 
                 validarDestinos(dto.destinos());
+                validarDataEvento(dto.dataInicio());
 
-                Evento evento = eventoRepository.findById(id)
-                                .orElseThrow(() -> new EntidadeNaoEncontradaException(
-                                                "Evento não encontrado!"));
+                Evento evento = buscarEventoId(id);
+
+                LocalDate dataAnterior = evento.getDataInicio();
 
                 evento.setTitulo(dto.titulo());
                 evento.setDescricao(dto.descricao());
                 evento.setDataInicio(dto.dataInicio());
                 evento.setHoraInicio(dto.horaInicio());
+
+                evento.calcularDataAviso();
 
                 evento.getDestinos().clear();
 
@@ -117,6 +134,7 @@ public class EventoService {
                                         destinoDTO.turmasIds());
 
                         if (turmas.size() != destinoDTO.turmasIds().size()) {
+
                                 throw new EntidadeNaoEncontradaException(
                                                 "Uma ou mais turmas não foram encontradas!");
                         }
@@ -128,7 +146,16 @@ public class EventoService {
                         evento.adicionarDestino(destino);
                 }
 
+                boolean dataAlterada = !dataAnterior.equals(dto.dataInicio());
+
                 Evento eventoSalvo = eventoRepository.save(evento);
+
+                envioAvisoService.sincronizarAposEdicao(
+                                eventoSalvo,
+                                dataAlterada);
+
+                envioAvisoService.processarSeForHoje(
+                                eventoSalvo);
 
                 return new EventoResponseDTO(eventoSalvo);
         }
@@ -153,7 +180,8 @@ public class EventoService {
                 return new EventoResponseDTO(evento);
         }
 
-        private void validarDestinos(Set<CriarEventoDestinoDTO> destinos) {
+        private void validarDestinos(
+                        Set<CriarEventoDestinoDTO> destinos) {
 
                 Set<PerfilUsuario> perfis = new HashSet<>();
 
@@ -167,6 +195,7 @@ public class EventoService {
                         }
 
                         if (!perfis.add(destino.perfil())) {
+
                                 throw new RuntimeException(
                                                 "Não é permitido mais de um destino para o mesmo perfil.");
                         }
@@ -178,6 +207,7 @@ public class EventoService {
                                                 || !destino.turmasIds().isEmpty();
 
                                 if (possuiFiltros) {
+
                                         throw new RuntimeException(
                                                         "Destinos para professores não podem possuir filtros.");
                                 }
@@ -199,17 +229,21 @@ public class EventoService {
 
                 Usuario usuario = usuarioService.obterUsuarioLogado();
 
-                List<Evento> eventos = eventoRepository.findByStatus(StatusEvento.ATIVO);
+                List<Evento> eventos = eventoRepository.findByStatus(
+                                StatusEvento.ATIVO);
 
                 PerfilUsuario perfil = usuario.getPerfil();
 
-                if (perfil == PerfilUsuario.ADMIN || perfil == PerfilUsuario.SECRETARIA) {
+                if (perfil == PerfilUsuario.ADMIN
+                                || perfil == PerfilUsuario.SECRETARIA) {
+
                         return eventos.stream()
                                         .map(EventoResponseDTO::new)
                                         .toList();
                 }
 
                 if (perfil == PerfilUsuario.PROFESSOR) {
+
                         return eventos.stream()
                                         .filter(this::destinadoAProfessor)
                                         .map(EventoResponseDTO::new)
@@ -223,7 +257,9 @@ public class EventoService {
                                                         "Aluno não encontrado"));
 
                         return eventos.stream()
-                                        .filter(evento -> alunoPodeVisualizar(evento, aluno))
+                                        .filter(evento -> alunoPodeVisualizar(
+                                                        evento,
+                                                        aluno))
                                         .map(EventoResponseDTO::new)
                                         .toList();
                 }
@@ -231,19 +267,24 @@ public class EventoService {
                 return List.of();
         }
 
-        private boolean destinadoAProfessor(Evento evento) {
+        private boolean destinadoAProfessor(
+                        Evento evento) {
 
                 return evento.getDestinos()
                                 .stream()
                                 .anyMatch(destino -> destino.getPerfil() == PerfilUsuario.PROFESSOR);
         }
 
-        private boolean alunoPodeVisualizar(Evento evento, Aluno aluno) {
+        private boolean alunoPodeVisualizar(
+                        Evento evento,
+                        Aluno aluno) {
 
                 return evento.getDestinos()
                                 .stream()
                                 .filter(destino -> destino.getPerfil() == PerfilUsuario.ALUNO)
-                                .anyMatch(destino -> alunoAtendeDestino(aluno, destino));
+                                .anyMatch(destino -> alunoAtendeDestino(
+                                                aluno,
+                                                destino));
         }
 
         private boolean alunoAtendeDestino(
@@ -253,7 +294,9 @@ public class EventoService {
                 return aluno.getMatriculas()
                                 .stream()
                                 .filter(Matricula::isAtivo)
-                                .anyMatch(matricula -> matriculaAtendeDestino(matricula, destino));
+                                .anyMatch(matricula -> matriculaAtendeDestino(
+                                                matricula,
+                                                destino));
         }
 
         private boolean matriculaAtendeDestino(
@@ -263,10 +306,12 @@ public class EventoService {
                 Turma turma = matricula.getTurma();
 
                 boolean etapaAtende = destino.getEtapas().isEmpty()
-                                || destino.getEtapas().contains(turma.getEtapa());
+                                || destino.getEtapas()
+                                                .contains(turma.getEtapa());
 
                 boolean modalidadeAtende = destino.getModalidades().isEmpty()
-                                || destino.getModalidades().contains(turma.getModalidade());
+                                || destino.getModalidades()
+                                                .contains(turma.getModalidade());
 
                 boolean turmaAtende = destino.getDestinacoesTurma().isEmpty()
                                 || destino.getDestinacoesTurma()
@@ -278,5 +323,18 @@ public class EventoService {
                 return etapaAtende
                                 && modalidadeAtende
                                 && turmaAtende;
+        }
+
+        private void validarDataEvento(
+                        LocalDate dataInicio) {
+
+                LocalDate hoje = LocalDate.now(
+                                ZoneId.of("America/Sao_Paulo"));
+
+                if (dataInicio.isBefore(hoje)) {
+
+                        throw new RuntimeException(
+                                        "A data do evento não pode estar no passado.");
+                }
         }
 }
