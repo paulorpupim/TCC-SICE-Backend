@@ -178,13 +178,12 @@ public class EventoService {
 
                 Evento evento = buscarEventoId(id);
 
-                if (evento.getStatus() == StatusEvento.ATIVO) {
-                        return new EventoResponseDTO(evento);
-                }
+                validarReativacao(evento);
 
                 evento.setStatus(StatusEvento.ATIVO);
 
-                envioAvisoService.processarSeDataAvisoChegou(evento);
+                envioAvisoService
+                                .processarSeDataAvisoChegou(evento);
 
                 return new EventoResponseDTO(evento);
         }
@@ -361,6 +360,17 @@ public class EventoService {
 
                         throw new RuntimeException(
                                         "A data do evento não pode estar no passado.");
+                }
+        }
+
+        private void validarReativacao(Evento evento) {
+
+                LocalDate hoje = LocalDate.now(
+                                ZoneId.of("America/Sao_Paulo"));
+
+                if (evento.getDataInicio().isBefore(hoje)) {
+                        throw new RuntimeException(
+                                        "Não é possível reativar um evento que já ocorreu.");
                 }
         }
 

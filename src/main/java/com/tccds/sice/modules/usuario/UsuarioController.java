@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.tccds.sice.dto.AlterarStatusDTO;
 import com.tccds.sice.enums.PerfilUsuario;
+import com.tccds.sice.modules.usuario.dto.AlterarSenhaDTO;
 import com.tccds.sice.modules.usuario.dto.CriarUsuarioDTO;
 import com.tccds.sice.modules.usuario.dto.EditarUsuarioDTO;
 import com.tccds.sice.modules.usuario.dto.UsuarioResponseDTO;
@@ -50,6 +51,7 @@ public class UsuarioController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UsuarioResponseDTO> editar(
             @PathVariable Long id, @RequestBody EditarUsuarioDTO dto) {
         return ResponseEntity.ok(usuarioService.editar(id, dto));
@@ -68,6 +70,15 @@ public class UsuarioController {
             @PathVariable Long id,
             @RequestBody AlterarStatusDTO dados) {
         usuarioService.alterarStatus(id, dados.ativo());
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/alterarSenha")    
+    public ResponseEntity<Void> alterarSenha(
+            @Valid @RequestBody AlterarSenhaDTO dto) {
+
+        usuarioService.alterarSenha(dto);
 
         return ResponseEntity.noContent().build();
     }

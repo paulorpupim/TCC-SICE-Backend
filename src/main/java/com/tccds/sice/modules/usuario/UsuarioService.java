@@ -5,6 +5,7 @@ import java.util.Set;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,7 @@ import com.tccds.sice.modules.credencial.Credencial;
 import com.tccds.sice.modules.credencial.CredencialService;
 import com.tccds.sice.modules.turma.Turma;
 import com.tccds.sice.modules.turma.TurmaService;
+import com.tccds.sice.modules.usuario.dto.AlterarSenhaDTO;
 import com.tccds.sice.modules.usuario.dto.CriarUsuarioDTO;
 import com.tccds.sice.modules.usuario.dto.EditarUsuarioDTO;
 import com.tccds.sice.modules.usuario.dto.UsuarioResponseDTO;
@@ -36,6 +38,8 @@ public class UsuarioService {
         private final CredencialService credencialService;
         private final AlunoService alunoService;
         private final TurmaService turmaService;
+
+        private final PasswordEncoder passwordEncoder;
 
         public Usuario buscarUsuarioId(Long id) {
                 return usuarioRepository.findById(id).orElseThrow(
@@ -243,6 +247,42 @@ public class UsuarioService {
                 Usuario usuario = buscarUsuarioId(id);
 
                 usuario.getCredencial().setAtivo(ativo);
+        }
+
+        @Transactional
+        public void alterarSenha(AlterarSenhaDTO dto) {
+
+                Usuario usuario = obterUsuarioLogado();
+
+                Credencial credencial = usuario.getCredencial();
+
+                boolean senhaCorreta = passwordEncoder.matches(
+                                dto.senhaAtual(),
+                                credencial.getSenhaHash());
+
+                if (!senhaCorreta) {
+                        throw new RuntimeException(
+                                        "A senha atual está incorreta.");
+                }
+
+                if (passwordEncoder.matches(
+                                dto.novaSenha(),
+                                credencial.getSenhaHash())) {
+                        throw new RuntimeException(
+                                        "A nova senha deve ser diferente da senha atual.");
+                }
+
+                String novaSenhaHash = passwordEncoder.encode(
+                                dto.novaSenha());
+
+                credencial.setSenhaHash(
+                                novaSenhaHash);
+
+                if (credencial.isPrimeiroAcesso()) {
+
+                        credencial.setPrimeiroAcesso(false);
+
+                }
         }
 
 }

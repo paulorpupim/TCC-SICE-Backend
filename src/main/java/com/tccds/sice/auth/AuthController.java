@@ -36,7 +36,7 @@ public class AuthController {
                                 .secure(false)
                                 .sameSite("Lax")
                                 .path("/")
-                                .maxAge(60 * 60) // Idealmente colocar o tempo de expiração do token
+                                .maxAge(60 * 60) // Idealmente colocar o tempo de expiração do token jwt
                                 .build();
 
                 LoginResponseDTO response = new LoginResponseDTO(

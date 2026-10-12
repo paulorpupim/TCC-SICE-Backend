@@ -28,8 +28,8 @@ public class EventoController {
 
     private final EventoService eventoService;
 
-    @PostMapping("/cadastrarEvento")
     @PreAuthorize("hasAnyRole('SECRETARIA', 'ADMIN')")
+    @PostMapping("/cadastrarEvento")
     public ResponseEntity<EventoResponseDTO> cadastrar(
             @Valid @RequestBody CriarEventoDTO dto) {
 
@@ -41,8 +41,8 @@ public class EventoController {
 
     }
 
-    @GetMapping("/listarEventos")
     @PreAuthorize("hasAnyRole('SECRETARIA', 'ADMIN')")
+    @GetMapping("/listarEventos")
     public ResponseEntity<List<EventoResponseDTO>> listarTodos() {
         return ResponseEntity.ok(eventoService.listarTodos());
     }
@@ -60,8 +60,8 @@ public class EventoController {
         return ResponseEntity.ok(eventoService.buscarEventoPorId(id));
     }
 
+    @PreAuthorize("hasAnyRole('SECRETARIA', 'ADMIN')")
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<EventoResponseDTO> editar(
             @PathVariable Long id,
             @RequestBody @Valid EditarEventoDTO dto) {
@@ -71,14 +71,21 @@ public class EventoController {
         return ResponseEntity.ok(evento);
     }
 
+    @PreAuthorize("hasAnyRole('SECRETARIA', 'ADMIN')")
     @PatchMapping("/{id}/cancelar")
     public EventoResponseDTO cancelar(
             @PathVariable Long id) {
         return eventoService.cancelar(id);
     }
 
-    
+    @PreAuthorize("hasAnyRole('SECRETARIA', 'ADMIN')")
+    @PatchMapping("/{id}/desativar")
+    public EventoResponseDTO desativar(
+            @PathVariable Long id) {
+        return eventoService.desativar(id);
+    }
 
+    @PreAuthorize("hasAnyRole('SECRETARIA', 'ADMIN')")
     @PatchMapping("/{id}/reativar")
     public EventoResponseDTO reativar(
             @PathVariable Long id) {

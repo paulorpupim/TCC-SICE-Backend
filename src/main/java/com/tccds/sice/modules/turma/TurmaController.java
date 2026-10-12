@@ -29,6 +29,7 @@ public class TurmaController {
 
     private final TurmaService turmaService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<TurmaResponseDTO> buscarPorId(@PathVariable Long id) {
         return ResponseEntity.ok(turmaService.buscarTurmaPorId(id));
@@ -47,6 +48,7 @@ public class TurmaController {
 
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<TurmaResponseDTO> editar(
         @PathVariable Long id, @RequestBody EditarTurmaDTO dto){

@@ -29,6 +29,7 @@ public class GrupoWhatsappController {
 
     private final GrupoWhatsappService grupoService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<GrupoWhatsappResponseDTO> buscarPorId(
             @PathVariable Long id) {
