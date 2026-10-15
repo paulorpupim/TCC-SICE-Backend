@@ -86,6 +86,11 @@ public class UsuarioService {
         @Transactional
         public UsuarioResponseDTO criar(CriarUsuarioDTO dto) {
 
+                if (usuarioRepository.findByCredencial_Identificador(dto.identificador()).isPresent()) {
+                        throw new RegraNegocioCadastroException(
+                                        "Já existe um usuário com esse identificador.");
+                }
+
                 String senha = "123456";
 
                 Credencial credencial = credencialService.criar(
@@ -134,6 +139,14 @@ public class UsuarioService {
 
                 Usuario usuario = buscarUsuarioId(id);
 
+                usuarioRepository.findByCredencial_Identificador(dto.identificador())
+                                .ifPresent(usuarioExistente -> {
+                                        if (!usuarioExistente.getId().equals(id)) {
+                                                throw new RegraNegocioCadastroException(
+                                                                "Já existe um usuário com esse identificador.");
+                                        }
+                                });
+
                 validarEdicao(usuario, dto);
 
                 usuario.setNome(dto.nome());
@@ -165,12 +178,6 @@ public class UsuarioService {
         private void validarEdicao(
                         Usuario usuario,
                         EditarUsuarioDTO dto) {
-
-                if (usuario.getPerfil() == PerfilUsuario.ALUNO
-                                && dto.turmasIds().isEmpty()) {
-                        throw new RegraNegocioCadastroException(
-                                        "Aluno deve possuir pelo menos uma turma.");
-                }
 
                 if (usuario.getPerfil() != PerfilUsuario.ALUNO
                                 && !dto.turmasIds().isEmpty()) {

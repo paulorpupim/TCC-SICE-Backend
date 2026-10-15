@@ -12,7 +12,8 @@ public record TurmaResponseDTO(
     ModalidadeEnsino modalidade,
     Long cursoId,
     String cursoNome,
-    Boolean ativo
+    Boolean ativo,
+    Boolean cursoAtivo
 
 ) {
 
@@ -24,7 +25,8 @@ public record TurmaResponseDTO(
             turma.getModalidade(),
             turma.getCurso().getId(),
             turma.getCurso().getNome(),
-            turma.isAtivo()
+            turma.isAtivo(),
+            turma.getCurso().isAtivo()
         );
     }
     

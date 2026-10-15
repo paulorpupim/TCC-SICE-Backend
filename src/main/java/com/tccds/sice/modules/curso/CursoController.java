@@ -57,7 +57,7 @@ public class CursoController {
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<CursoResponseDTO> editar(
-            @PathVariable Long id, @RequestBody EditarCursoDTO dto) {
+            @PathVariable Long id, @Valid @RequestBody EditarCursoDTO dto) {
         return ResponseEntity.ok(cursoService.editar(id, dto));
     }
 

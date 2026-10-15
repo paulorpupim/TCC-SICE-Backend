@@ -15,8 +15,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.tccds.sice.dto.AlterarStatusDTO;
+import com.tccds.sice.modules.aluno.matricula.MatriculaService;
 import com.tccds.sice.modules.turma.dto.CriarTurmaDTO;
 import com.tccds.sice.modules.turma.dto.EditarTurmaDTO;
+import com.tccds.sice.modules.turma.dto.MatriculaTurmaResponseDTO;
 import com.tccds.sice.modules.turma.dto.TurmaResponseDTO;
 
 import jakarta.validation.Valid;
@@ -28,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 public class TurmaController {
 
     private final TurmaService turmaService;
+    private final MatriculaService matriculaService;
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
@@ -51,8 +54,8 @@ public class TurmaController {
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<TurmaResponseDTO> editar(
-        @PathVariable Long id, @RequestBody EditarTurmaDTO dto){
-            return ResponseEntity.ok(turmaService.editar(id, dto));
+            @PathVariable Long id, @Valid @RequestBody EditarTurmaDTO dto) {
+        return ResponseEntity.ok(turmaService.editar(id, dto));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIA')")
@@ -69,6 +72,12 @@ public class TurmaController {
         turmaService.alterarStatus(id, dados.ativo());
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{turmaId}/matriculas")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<MatriculaTurmaResponseDTO>> listar(@PathVariable Long turmaId) {
+        return ResponseEntity.ok(matriculaService.listarPorTurma(turmaId));
     }
 
 }

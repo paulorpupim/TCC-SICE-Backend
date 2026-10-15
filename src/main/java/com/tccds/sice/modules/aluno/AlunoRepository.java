@@ -9,5 +9,7 @@ import com.tccds.sice.modules.usuario.Usuario;
 public interface AlunoRepository extends JpaRepository<Aluno, Long> {
 
     Optional<Aluno> findByUsuario(Usuario usuario);
+
+    Optional<Aluno> findByUsuario_Id(Long usuarioId);
     
 }
