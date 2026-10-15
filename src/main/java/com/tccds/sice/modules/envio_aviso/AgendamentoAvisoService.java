@@ -14,9 +14,11 @@ import com.tccds.sice.modules.evento.Evento;
 import com.tccds.sice.modules.evento.EventoRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AgendamentoAvisoService {
 
     private static final ZoneId ZONA =
@@ -44,6 +46,8 @@ public class AgendamentoAvisoService {
                                 hoje
                         );
 
+        log.debug("[SICE-AVISOS] Agendamento: hoje={}, eventos elegiveis={}", hoje, eventos.size());
+
         for (Evento evento : eventos) {
 
             envioAvisoService
@@ -59,6 +63,7 @@ public class AgendamentoAvisoService {
     @Scheduled(
             cron = "0 5 * * * *",
             zone = "America/Sao_Paulo"
+        //     fixedRate = 10000
     )
     public void tentarNovamenteEnviosPendentes() {
 
@@ -77,6 +82,8 @@ public class AgendamentoAvisoService {
                                 hoje,
                                 limiteTentativa
                         );
+
+        log.debug("[SICE-AVISOS] Retry: envios elegiveis={}", enviosIds.size());
 
         for (Long envioId : enviosIds) {
 

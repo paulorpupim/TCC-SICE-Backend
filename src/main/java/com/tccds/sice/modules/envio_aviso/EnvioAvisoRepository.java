@@ -3,7 +3,10 @@ package com.tccds.sice.modules.envio_aviso;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,6 +15,83 @@ import com.tccds.sice.enums.StatusEnvioAviso;
 import com.tccds.sice.enums.StatusEvento;
 
 public interface EnvioAvisoRepository extends JpaRepository<EnvioAviso, Long> {
+
+        // Consultas separadas para nao passar parametros nulos a expressao LIKE/LOWER.
+        // Todas carregam as associacoes ManyToOne para evitar N+1 na listagem.
+        @Query(value = """
+                        SELECT envio
+                        FROM EnvioAviso envio
+                        JOIN FETCH envio.evento
+                        JOIN FETCH envio.grupoWhatsapp
+                        """,
+               countQuery = "SELECT COUNT(envio) FROM EnvioAviso envio")
+        Page<EnvioAviso> consultarTodos(Pageable pageable);
+
+        @Query(value = """
+                        SELECT envio
+                        FROM EnvioAviso envio
+                        JOIN FETCH envio.evento
+                        JOIN FETCH envio.grupoWhatsapp
+                        WHERE envio.status = :status
+                        """,
+               countQuery = """
+                        SELECT COUNT(envio)
+                        FROM EnvioAviso envio
+                        WHERE envio.status = :status
+                        """)
+        Page<EnvioAviso> consultarPorStatus(
+                        @Param("status") StatusEnvioAviso status, Pageable pageable);
+
+        // :padrao e sempre texto nao nulo, ja normalizado: "%" + busca.toLowerCase() + "%".
+        @Query(value = """
+                        SELECT envio
+                        FROM EnvioAviso envio
+                        JOIN FETCH envio.evento evento
+                        JOIN FETCH envio.grupoWhatsapp grupo
+                        WHERE LOWER(evento.titulo) LIKE :padrao
+                           OR LOWER(grupo.nome) LIKE :padrao
+                        """,
+               countQuery = """
+                        SELECT COUNT(envio)
+                        FROM EnvioAviso envio
+                        JOIN envio.evento evento
+                        JOIN envio.grupoWhatsapp grupo
+                        WHERE LOWER(evento.titulo) LIKE :padrao
+                           OR LOWER(grupo.nome) LIKE :padrao
+                        """)
+        Page<EnvioAviso> consultarPorBusca(
+                        @Param("padrao") String padrao, Pageable pageable);
+
+        @Query(value = """
+                        SELECT envio
+                        FROM EnvioAviso envio
+                        JOIN FETCH envio.evento evento
+                        JOIN FETCH envio.grupoWhatsapp grupo
+                        WHERE envio.status = :status
+                          AND (LOWER(evento.titulo) LIKE :padrao
+                               OR LOWER(grupo.nome) LIKE :padrao)
+                        """,
+               countQuery = """
+                        SELECT COUNT(envio)
+                        FROM EnvioAviso envio
+                        JOIN envio.evento evento
+                        JOIN envio.grupoWhatsapp grupo
+                        WHERE envio.status = :status
+                          AND (LOWER(evento.titulo) LIKE :padrao
+                               OR LOWER(grupo.nome) LIKE :padrao)
+                        """)
+        Page<EnvioAviso> consultarPorStatusEBusca(
+                        @Param("status") StatusEnvioAviso status,
+                        @Param("padrao") String padrao,
+                        Pageable pageable);
+
+        @Query("""
+                SELECT envio FROM EnvioAviso envio
+                JOIN FETCH envio.evento
+                JOIN FETCH envio.grupoWhatsapp
+                WHERE envio.id = :id
+                """)
+        Optional<EnvioAviso> consultarPorId(@Param("id") Long id);
 
         boolean existsByEventoIdAndGrupoWhatsappId(Long eventoId, Long grupoWhatsappId);
 
@@ -26,6 +106,8 @@ public interface EnvioAvisoRepository extends JpaRepository<EnvioAviso, Long> {
                           AND e.tentativas < 3
                           AND e.evento.status = :statusEvento
                           AND e.evento.dataInicio >= :hoje
+                          AND e.evento.dataAviso <= :hoje
+                          AND e.grupoWhatsapp.ativo = true
                           AND (
                                 e.ultimaTentativaEm IS NULL
                                 OR e.ultimaTentativaEm <= :limiteTentativa
@@ -36,5 +118,4 @@ public interface EnvioAvisoRepository extends JpaRepository<EnvioAviso, Long> {
                         @Param("statusEvento") StatusEvento statusEvento,
                         @Param("hoje") LocalDate hoje,
                         @Param("limiteTentativa") LocalDateTime limiteTentativa);
-
 }
