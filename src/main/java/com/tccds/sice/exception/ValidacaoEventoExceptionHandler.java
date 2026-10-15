@@ -16,6 +16,12 @@ public class ValidacaoEventoExceptionHandler {
                 .body(Map.of("mensagem", ex.getMessage()));
     }
 
+    @ExceptionHandler(RegraNegocioCadastroException.class)
+    public ResponseEntity<Map<String, String>> regraDeCadastro(RegraNegocioCadastroException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("mensagem", ex.getMessage()));
+    }
+
     @ExceptionHandler(RegraNegocioEventoException.class)
     public ResponseEntity<Map<String, String>> regraDeNegocio(RegraNegocioEventoException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)

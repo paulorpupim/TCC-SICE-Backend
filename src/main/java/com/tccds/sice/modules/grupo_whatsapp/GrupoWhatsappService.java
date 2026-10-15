@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.tccds.sice.enums.TipoGrupo;
 import com.tccds.sice.exception.EntidadeNaoEncontradaException;
+import com.tccds.sice.exception.RegraNegocioCadastroException;
 import com.tccds.sice.modules.grupo_whatsapp.dto.CriarGrupoWhatsappDTO;
 import com.tccds.sice.modules.grupo_whatsapp.dto.EditarGrupoWhatsappDTO;
 import com.tccds.sice.modules.grupo_whatsapp.dto.GrupoWhatsappResponseDTO;
@@ -43,7 +44,7 @@ public class GrupoWhatsappService {
         if (grupoRepository.existsByIdentificador(
                 dto.identificador())) {
 
-            throw new RuntimeException(
+            throw new RegraNegocioCadastroException(
                     "Já existe um grupo com esse identificador.");
         }
 
@@ -74,7 +75,7 @@ public class GrupoWhatsappService {
                 dto.identificador(),
                 id)) {
 
-            throw new RuntimeException(
+            throw new RegraNegocioCadastroException(
                     "Já existe um grupo com esse identificador.");
         }
 
@@ -120,12 +121,12 @@ public class GrupoWhatsappService {
         if (tipo == TipoGrupo.TURMA) {
 
             if (turmaId == null) {
-                throw new RuntimeException(
+                throw new RegraNegocioCadastroException(
                         "Grupos do tipo TURMA devem possuir uma turma.");
             }
 
             if (grupoRepository.existsByTurmaId(turmaId)) {
-                throw new RuntimeException(
+                throw new RegraNegocioCadastroException(
                         "Essa turma já possui um grupo do WhatsApp.");
             }
 
@@ -133,12 +134,12 @@ public class GrupoWhatsappService {
         }
 
         if (turmaId != null) {
-            throw new RuntimeException(
+            throw new RegraNegocioCadastroException(
                     "Grupos gerais não podem possuir uma turma.");
         }
 
         if (grupoRepository.existsByTipo(tipo)) {
-            throw new RuntimeException(
+            throw new RegraNegocioCadastroException(
                     "Já existe um grupo geral desse tipo.");
         }
 
@@ -153,7 +154,7 @@ public class GrupoWhatsappService {
         if (tipo == TipoGrupo.TURMA) {
 
             if (turmaId == null) {
-                throw new RuntimeException(
+                throw new RegraNegocioCadastroException(
                         "Grupos do tipo TURMA devem possuir uma turma.");
             }
 
@@ -161,7 +162,7 @@ public class GrupoWhatsappService {
                     turmaId,
                     grupo.getId())) {
 
-                throw new RuntimeException(
+                throw new RegraNegocioCadastroException(
                         "Essa turma já possui um grupo do WhatsApp.");
             }
 
@@ -169,7 +170,7 @@ public class GrupoWhatsappService {
         }
 
         if (turmaId != null) {
-            throw new RuntimeException(
+            throw new RegraNegocioCadastroException(
                     "Grupos gerais não podem possuir uma turma.");
         }
 
@@ -177,7 +178,7 @@ public class GrupoWhatsappService {
                 tipo,
                 grupo.getId())) {
 
-            throw new RuntimeException(
+            throw new RegraNegocioCadastroException(
                     "Já existe um grupo geral desse tipo.");
         }
 

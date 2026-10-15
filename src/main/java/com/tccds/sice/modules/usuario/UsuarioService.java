@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.tccds.sice.enums.PerfilUsuario;
 import com.tccds.sice.exception.EntidadeNaoEncontradaException;
+import com.tccds.sice.exception.RegraNegocioCadastroException;
 import com.tccds.sice.exception.SenhaInvalidaException;
 import com.tccds.sice.modules.aluno.Aluno;
 import com.tccds.sice.modules.aluno.AlunoRepository;
@@ -105,7 +106,7 @@ public class UsuarioService {
 
                         if (dto.turmasIds() == null ||
                                         dto.turmasIds().isEmpty()) {
-                                throw new RuntimeException(
+                                throw new RegraNegocioCadastroException(
                                                 "Aluno deve possuir pelo menos uma turma");
                         }
 
@@ -167,13 +168,13 @@ public class UsuarioService {
 
                 if (usuario.getPerfil() == PerfilUsuario.ALUNO
                                 && dto.turmasIds().isEmpty()) {
-                        throw new RuntimeException(
+                        throw new RegraNegocioCadastroException(
                                         "Aluno deve possuir pelo menos uma turma.");
                 }
 
                 if (usuario.getPerfil() != PerfilUsuario.ALUNO
                                 && !dto.turmasIds().isEmpty()) {
-                        throw new RuntimeException(
+                        throw new RegraNegocioCadastroException(
                                         "Apenas alunos podem possuir turmas.");
                 }
         }
