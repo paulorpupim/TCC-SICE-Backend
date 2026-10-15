@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.tccds.sice.enums.PerfilUsuario;
 import com.tccds.sice.exception.EntidadeNaoEncontradaException;
+import com.tccds.sice.exception.SenhaInvalidaException;
 import com.tccds.sice.modules.aluno.Aluno;
 import com.tccds.sice.modules.aluno.AlunoRepository;
 import com.tccds.sice.modules.aluno.AlunoService;
@@ -261,14 +262,14 @@ public class UsuarioService {
                                 credencial.getSenhaHash());
 
                 if (!senhaCorreta) {
-                        throw new RuntimeException(
+                        throw new SenhaInvalidaException(
                                         "A senha atual está incorreta.");
                 }
 
                 if (passwordEncoder.matches(
                                 dto.novaSenha(),
                                 credencial.getSenhaHash())) {
-                        throw new RuntimeException(
+                        throw new SenhaInvalidaException(
                                         "A nova senha deve ser diferente da senha atual.");
                 }
 

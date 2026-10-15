@@ -55,7 +55,7 @@ public class TurmaController {
             return ResponseEntity.ok(turmaService.editar(id, dto));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIA')")
     @GetMapping("/listarTurmas")
     public ResponseEntity<List<TurmaResponseDTO>> listar() {
         return ResponseEntity.ok(turmaService.listarTodos());

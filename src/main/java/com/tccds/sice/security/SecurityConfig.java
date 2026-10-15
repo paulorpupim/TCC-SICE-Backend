@@ -140,7 +140,8 @@ public class SecurityConfig {
         public SecurityFilterChain securityFilterChain(
                         HttpSecurity http,
                         JwtAuthenticationConverter converter,
-                        BearerTokenResolver bearerTokenResolver) throws Exception {
+                        BearerTokenResolver bearerTokenResolver,
+                        PrimeiroAcessoAuthorizationManager primeiroAcessoAuthorizationManager) throws Exception {
 
                 http
                                 .cors(Customizer.withDefaults())
@@ -161,8 +162,15 @@ public class SecurityConfig {
                                                                 "/auth/csrf")
                                                 .permitAll()
 
+                                                .requestMatchers(HttpMethod.GET, "/auth/me")
+                                                .authenticated()
+                                                .requestMatchers(HttpMethod.POST, "/auth/logout")
+                                                .authenticated()
+                                                .requestMatchers(HttpMethod.PATCH, "/usuarios/alterarSenha")
+                                                .authenticated()
+
                                                 .anyRequest()
-                                                .authenticated())
+                                                .access(primeiroAcessoAuthorizationManager))
 
                                 .oauth2ResourceServer(resourceServer -> resourceServer
                                                 .bearerTokenResolver(bearerTokenResolver)

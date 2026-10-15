@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.tccds.sice.enums.PerfilUsuario;
 import com.tccds.sice.enums.StatusEvento;
 import com.tccds.sice.exception.EntidadeNaoEncontradaException;
+import com.tccds.sice.exception.RegraNegocioEventoException;
 import com.tccds.sice.modules.aluno.Aluno;
 import com.tccds.sice.modules.aluno.AlunoRepository;
 import com.tccds.sice.modules.aluno.matricula.Matricula;
@@ -164,7 +165,7 @@ public class EventoService {
                 Evento evento = buscarEventoId(id);
 
                 if (evento.getStatus() != StatusEvento.ATIVO) {
-                        throw new RuntimeException(
+                        throw new RegraNegocioEventoException(
                                         "Apenas eventos ativos podem ser cancelados.");
                 }
 
@@ -267,13 +268,13 @@ public class EventoService {
                         if (destino.perfil() != PerfilUsuario.ALUNO
                                         && destino.perfil() != PerfilUsuario.PROFESSOR) {
 
-                                throw new RuntimeException(
+                                throw new RegraNegocioEventoException(
                                                 "O evento só pode ser destinado a alunos ou professores.");
                         }
 
                         if (!perfis.add(destino.perfil())) {
 
-                                throw new RuntimeException(
+                                throw new RegraNegocioEventoException(
                                                 "Não é permitido mais de um destino para o mesmo perfil.");
                         }
 
@@ -285,7 +286,7 @@ public class EventoService {
 
                                 if (possuiFiltros) {
 
-                                        throw new RuntimeException(
+                                        throw new RegraNegocioEventoException(
                                                         "Destinos para professores não podem possuir filtros.");
                                 }
                         }
@@ -358,7 +359,7 @@ public class EventoService {
 
                 if (dataInicio.isBefore(hoje)) {
 
-                        throw new RuntimeException(
+                        throw new RegraNegocioEventoException(
                                         "A data do evento não pode estar no passado.");
                 }
         }
@@ -369,7 +370,7 @@ public class EventoService {
                                 ZoneId.of("America/Sao_Paulo"));
 
                 if (evento.getDataInicio().isBefore(hoje)) {
-                        throw new RuntimeException(
+                        throw new RegraNegocioEventoException(
                                         "Não é possível reativar um evento que já ocorreu.");
                 }
         }

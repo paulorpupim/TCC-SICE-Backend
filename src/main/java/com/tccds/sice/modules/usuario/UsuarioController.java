@@ -1,10 +1,12 @@
 package com.tccds.sice.modules.usuario;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.tccds.sice.dto.AlterarStatusDTO;
 import com.tccds.sice.enums.PerfilUsuario;
+import com.tccds.sice.exception.SenhaInvalidaException;
 import com.tccds.sice.modules.usuario.dto.AlterarSenhaDTO;
 import com.tccds.sice.modules.usuario.dto.CriarUsuarioDTO;
 import com.tccds.sice.modules.usuario.dto.EditarUsuarioDTO;
@@ -72,6 +75,11 @@ public class UsuarioController {
         usuarioService.alterarStatus(id, dados.ativo());
 
         return ResponseEntity.noContent().build();
+    }
+
+    @ExceptionHandler(SenhaInvalidaException.class)
+    public ResponseEntity<Map<String, String>> tratarSenhaInvalida(SenhaInvalidaException exception) {
+        return ResponseEntity.badRequest().body(Map.of("mensagem", exception.getMessage()));
     }
 
     @PatchMapping("/alterarSenha")    
