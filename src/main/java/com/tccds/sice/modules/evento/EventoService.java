@@ -17,6 +17,7 @@ import com.tccds.sice.modules.aluno.Aluno;
 import com.tccds.sice.modules.aluno.AlunoRepository;
 import com.tccds.sice.modules.aluno.matricula.Matricula;
 import com.tccds.sice.modules.envio_aviso.EnvioAvisoService;
+import com.tccds.sice.modules.cancelamento_aviso.ComunicacaoCancelamentoRepository;
 import com.tccds.sice.modules.evento.dto.CriarEventoDTO;
 import com.tccds.sice.modules.evento.dto.EditarEventoDTO;
 import com.tccds.sice.modules.evento.dto.EventoResponseDTO;
@@ -39,6 +40,7 @@ public class EventoService {
 
         private final UsuarioService usuarioService;
         private final EnvioAvisoService envioAvisoService;
+        private final ComunicacaoCancelamentoRepository cancelamentoRepository;
 
         public Evento buscarEventoId(Long id) {
 
@@ -162,7 +164,8 @@ public class EventoService {
         @Transactional
         public EventoResponseDTO cancelar(Long id) {
 
-                Evento evento = buscarEventoId(id);
+                Evento evento = eventoRepository.buscarParaCancelamento(id)
+                                .orElseThrow(() -> new EntidadeNaoEncontradaException("Evento não encontrado"));
 
                 if (evento.getStatus() != StatusEvento.ATIVO) {
                         throw new RegraNegocioEventoException(
@@ -177,9 +180,14 @@ public class EventoService {
         @Transactional
         public EventoResponseDTO reativar(Long id) {
 
-                Evento evento = buscarEventoId(id);
+                Evento evento = eventoRepository.buscarParaCancelamento(id)
+                                .orElseThrow(() -> new EntidadeNaoEncontradaException("Evento não encontrado"));
 
                 validarReativacao(evento);
+                if (cancelamentoRepository.existsByEventoId(id)) {
+                        throw new RegraNegocioEventoException(
+                                "Este cancelamento ja possui comunicacoes registradas; reativacao requer uma nova politica de aviso.");
+                }
 
                 evento.setStatus(StatusEvento.ATIVO);
 
@@ -192,12 +200,17 @@ public class EventoService {
         @Transactional
         public EventoResponseDTO desativar(Long id) {
 
-                Evento evento = buscarEventoId(id);
+                Evento evento = eventoRepository.buscarParaCancelamento(id)
+                                .orElseThrow(() -> new EntidadeNaoEncontradaException("Evento não encontrado"));
 
                 if (evento.getStatus() == StatusEvento.DESATIVADO) {
                         return new EventoResponseDTO(evento);
                 }
 
+                if (cancelamentoRepository.existsByEventoId(id)) {
+                        throw new RegraNegocioEventoException(
+                                "Evento com comunicacao de cancelamento nao pode ser desativado nesta etapa.");
+                }
                 evento.setStatus(StatusEvento.DESATIVADO);
 
                 return new EventoResponseDTO(evento);

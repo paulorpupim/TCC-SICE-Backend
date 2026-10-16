@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 
 import com.tccds.sice.enums.Etapa;
 import com.tccds.sice.enums.ModalidadeEnsino;
@@ -26,26 +27,32 @@ public class BotWhatsappService {
         @Value("${bot.secret}")
         private String botSecret;
 
-        public void enviar(EnvioAviso envio) {
+        private final RestClient restClient = criarRestClient();
 
+        public EnviarAvisoBotDTO prepararEnvio(EnvioAviso envio) {
                 Evento evento = envio.getEvento();
                 GrupoWhatsapp grupo = envio.getGrupoWhatsapp();
+                return new EnviarAvisoBotDTO(grupo.getIdentificador(), montarMensagem(evento, grupo));
+        }
 
-                String mensagem = montarMensagem(evento, grupo);
-
-                EnviarAvisoBotDTO dto = new EnviarAvisoBotDTO(
-                                grupo.getIdentificador(),
-                                mensagem);
-
-                RestClient.create()
-                                .post()
+        public void enviar(EnviarAvisoBotDTO dto) {
+                restClient.post()
                                 .uri(botUrl + "/enviar-aviso")
-                                .header(
-                                                "X-Bot-Secret",
-                                                botSecret)
+                                .header("X-Bot-Secret", botSecret)
                                 .body(dto)
                                 .retrieve()
                                 .toBodilessEntity();
+        }
+
+        public void enviar(EnvioAviso envio) {
+                enviar(prepararEnvio(envio));
+        }
+
+        private static RestClient criarRestClient() {
+                SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+                factory.setConnectTimeout(5_000);
+                factory.setReadTimeout(90_000);
+                return RestClient.builder().requestFactory(factory).build();
         }
 
         private String montarMensagem(

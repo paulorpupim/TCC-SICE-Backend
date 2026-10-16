@@ -60,6 +60,12 @@ public class AgendamentoAvisoService {
         }
     }
 
+    /** Reservas que ficaram abandonadas nao sao reenviadas automaticamente. */
+    @Scheduled(cron = "0 */5 * * * *", zone = "America/Sao_Paulo")
+    public void recuperarReservas() {
+        envioAvisoService.recuperarReservasExpiradas();
+    }
+
     @Scheduled(
             cron = "0 5 * * * *",
             zone = "America/Sao_Paulo"

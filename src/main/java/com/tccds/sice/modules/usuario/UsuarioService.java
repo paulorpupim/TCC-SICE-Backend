@@ -25,6 +25,7 @@ import com.tccds.sice.modules.turma.TurmaService;
 import com.tccds.sice.modules.usuario.dto.AlterarSenhaDTO;
 import com.tccds.sice.modules.usuario.dto.CriarUsuarioDTO;
 import com.tccds.sice.modules.usuario.dto.EditarUsuarioDTO;
+import com.tccds.sice.modules.usuario.dto.RedefinirSenhaUsuarioDTO;
 import com.tccds.sice.modules.usuario.dto.UsuarioResponseDTO;
 
 import lombok.RequiredArgsConstructor;
@@ -256,6 +257,26 @@ public class UsuarioService {
                 Usuario usuario = buscarUsuarioId(id);
 
                 usuario.getCredencial().setAtivo(ativo);
+        }
+
+        @Transactional
+        public void redefinirSenha(Long usuarioId, RedefinirSenhaUsuarioDTO dto) {
+                Usuario administrador = obterUsuarioLogado();
+                Usuario usuario = buscarUsuarioId(usuarioId);
+
+                if (administrador.getId().equals(usuario.getId())) {
+                        throw new RegraNegocioCadastroException(
+                                        "Para alterar sua própria senha, utilize o fluxo de alteração de senha.");
+                }
+
+                Credencial credencial = usuario.getCredencial();
+                if (passwordEncoder.matches(dto.senhaTemporaria(), credencial.getSenhaHash())) {
+                        throw new RegraNegocioCadastroException(
+                                        "A senha provisória precisa ser diferente da senha atual do usuário.");
+                }
+
+                credencial.setSenhaHash(passwordEncoder.encode(dto.senhaTemporaria()));
+                credencial.setPrimeiroAcesso(true);
         }
 
         @Transactional

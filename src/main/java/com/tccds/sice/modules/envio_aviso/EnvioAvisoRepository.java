@@ -8,6 +8,8 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -93,17 +95,33 @@ public interface EnvioAvisoRepository extends JpaRepository<EnvioAviso, Long> {
                 """)
         Optional<EnvioAviso> consultarPorId(@Param("id") Long id);
 
+
+        /** A reserva e feita sob bloqueio de linha no PostgreSQL. */
+        @Lock(LockModeType.PESSIMISTIC_WRITE)
+        @Query("SELECT envio FROM EnvioAviso envio WHERE envio.id = :id")
+        Optional<EnvioAviso> buscarParaReserva(@Param("id") Long id);
+
+        @Query("SELECT envio.id FROM EnvioAviso envio WHERE envio.evento.id = :eventoId AND envio.status = :status")
+        List<Long> buscarIdsDoEventoPorStatus(@Param("eventoId") Long eventoId,
+                        @Param("status") StatusEnvioAviso status);
+
+        @Query("SELECT envio.id FROM EnvioAviso envio WHERE envio.processandoDesde IS NOT NULL AND envio.processandoDesde <= :limite")
+        List<Long> buscarReservasExpiradas(@Param("limite") LocalDateTime limite);
+
         boolean existsByEventoIdAndGrupoWhatsappId(Long eventoId, Long grupoWhatsappId);
 
         List<EnvioAviso> findByEventoIdAndStatus(Long eventoId, StatusEnvioAviso status);
 
         List<EnvioAviso> findByEventoId(Long eventoId);
 
+        List<EnvioAviso> findByEventoIdOrderByIdAsc(Long eventoId);
+
         @Query("""
                         SELECT e.id
                         FROM EnvioAviso e
                         WHERE e.status = :status
                           AND e.tentativas < 3
+                          AND e.processandoDesde IS NULL
                           AND e.evento.status = :statusEvento
                           AND e.evento.dataInicio >= :hoje
                           AND e.evento.dataAviso <= :hoje

@@ -17,9 +17,14 @@ import org.springframework.web.bind.annotation.RestController;
 import com.tccds.sice.modules.evento.dto.CriarEventoDTO;
 import com.tccds.sice.modules.evento.dto.EditarEventoDTO;
 import com.tccds.sice.modules.evento.dto.EventoResponseDTO;
+import com.tccds.sice.modules.evento.dto.VerificarGruposEventoDTO;
+import com.tccds.sice.modules.evento.dto.ResultadoVerificacaoGruposDTO;
+import com.tccds.sice.modules.envio_aviso.ResolverGruposAvisoService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import com.tccds.sice.modules.cancelamento_aviso.ComunicacaoCancelamentoService;
+import com.tccds.sice.modules.cancelamento_aviso.dto.CancelamentoComAvisoResponseDTO;
 
 @RestController
 @RequestMapping("/eventos")
@@ -27,6 +32,16 @@ import lombok.RequiredArgsConstructor;
 public class EventoController {
 
     private final EventoService eventoService;
+    private final ComunicacaoCancelamentoService comunicacaoCancelamentoService;
+    private final ResolverGruposAvisoService resolverGruposAvisoService;
+
+    @PreAuthorize("hasAnyRole('SECRETARIA', 'ADMIN')")
+    @PostMapping("/verificarGrupos")
+    public ResponseEntity<ResultadoVerificacaoGruposDTO> verificarGrupos(
+            @Valid @RequestBody VerificarGruposEventoDTO dto) {
+        return ResponseEntity.ok(new ResultadoVerificacaoGruposDTO(
+                resolverGruposAvisoService.resolver(dto.destinos())));
+    }
 
     @PreAuthorize("hasAnyRole('SECRETARIA', 'ADMIN')")
     @PostMapping("/cadastrarEvento")
@@ -75,6 +90,12 @@ public class EventoController {
     public EventoResponseDTO cancelar(
             @PathVariable Long id) {
         return eventoService.cancelar(id);
+    }
+
+    @PreAuthorize("hasAnyRole('SECRETARIA', 'ADMIN')")
+    @PatchMapping("/{id}/cancelar-com-aviso")
+    public CancelamentoComAvisoResponseDTO cancelarComAviso(@PathVariable Long id) {
+        return comunicacaoCancelamentoService.cancelarEComunicar(id);
     }
 
     @PreAuthorize("hasAnyRole('SECRETARIA', 'ADMIN')")

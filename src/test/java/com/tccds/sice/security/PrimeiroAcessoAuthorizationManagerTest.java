@@ -47,7 +47,7 @@ class PrimeiroAcessoAuthorizationManagerTest {
                 .subject("matricula123")
                 .claim("roles", List.of("ADMIN"))
                 .build();
-        autenticacaoJwt = new JwtAuthenticationToken(jwt);
+        autenticacaoJwt = new JwtAuthenticationToken(jwt, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
 
         credencial = new Credencial("matricula123", "hash-de-teste");
         usuario = new Usuario("Usuário de teste", "teste@exemplo.com", PerfilUsuario.ADMIN, credencial);

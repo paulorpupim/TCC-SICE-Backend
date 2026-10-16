@@ -1,30 +1,22 @@
 package com.tccds.sice.modules.envio_aviso;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-import com.tccds.sice.enums.PerfilUsuario;
-import com.tccds.sice.enums.ResultadoTentativaEnvioAviso;
 import com.tccds.sice.enums.StatusEvento;
 import com.tccds.sice.enums.StatusEnvioAviso;
-import com.tccds.sice.enums.TipoGrupo;
 import com.tccds.sice.modules.bot_whatsapp.BotWhatsappService;
-import com.tccds.sice.modules.envio_aviso.tentativa_envio_aviso.TentativaEnvioAviso;
-import com.tccds.sice.modules.envio_aviso.tentativa_envio_aviso.TentativaEnvioAvisoRepository;
 import com.tccds.sice.modules.evento.Evento;
-import com.tccds.sice.modules.evento.evento_destino.EventoDestino;
-import com.tccds.sice.modules.evento.evento_destino_turma.EventoDestinoTurma;
+import com.tccds.sice.modules.evento.EventoRepository;
 import com.tccds.sice.modules.grupo_whatsapp.GrupoWhatsapp;
-import com.tccds.sice.modules.grupo_whatsapp.GrupoWhatsappRepository;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.ApplicationEventPublisher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,12 +26,17 @@ import lombok.extern.slf4j.Slf4j;
 public class EnvioAvisoService {
 
         private final EnvioAvisoRepository envioAvisoRepository;
-        private final TentativaEnvioAvisoRepository tentativaEnvioAvisoRepository;
-        private final GrupoWhatsappRepository grupoWhatsappRepository;
+        private final EventoRepository eventoRepository;
+        private final ResolverGruposAvisoService resolverGruposAvisoService;
         private final BotWhatsappService botWhatsappService;
+        private final ProcessamentoEnvioTransacionalService processamentoTransacional;
+        private final ApplicationEventPublisher eventPublisher;
 
         @Transactional
         public void criarEnviosParaEvento(Evento evento) {
+                // O agendador pode ter obtido um Evento fora da transacao.
+                // Recarrega-lo aqui permite acessar destinos LAZY com seguranca.
+                evento = eventoRepository.findById(evento.getId()).orElseThrow();
 
                 if (evento.getStatus() != StatusEvento.ATIVO) {
                         log.debug("[SICE-AVISOS] Nao cria envios: evento={} status={}",
@@ -47,7 +44,7 @@ public class EnvioAvisoService {
                         return;
                 }
 
-                Set<GrupoWhatsapp> grupos = resolverGrupos(evento);
+                Set<GrupoWhatsapp> grupos = resolverGruposAvisoService.resolver(evento).grupos();
                 log.debug("[SICE-AVISOS] Evento={} destinos={} grupos ATIVOS encontrados={}",
                                 evento.getId(), evento.getDestinos().size(), grupos.size());
                 if (grupos.isEmpty()) {
@@ -78,171 +75,59 @@ public class EnvioAvisoService {
                 }
         }
 
-        /**
-         * O resultado e a tentativa sao persistidos na MESMA transacao.
-         * Esta etapa NAO implementa bloqueio concorrente/idempotencia no bot.
-         */
-        @Transactional
-        public void processarEnvio(EnvioAviso envio) {
-
-                if (!podeProcessar(envio)) {
-                        log.debug("[SICE-AVISOS] Nao processado: envio={} status={} tentativas={} eventoStatus={} grupoAtivo={} dataAviso={} dataInicio={}",
-                                        envio.getId(), envio.getStatus(), envio.getTentativas(),
-                                        envio.getEvento().getStatus(), envio.getGrupoWhatsapp().isAtivo(),
-                                        envio.getEvento().getDataAviso(), envio.getEvento().getDataInicio());
+        /** Sem @Transactional: a chamada HTTP acontece APOS o commit da reserva. */
+        public void processarEnvioPorId(Long id) {
+                ReservaEnvioAviso reserva = processamentoTransacional.reservar(id);
+                if (reserva == null) {
+                        log.debug("[SICE-AVISOS] Nao reservado: envio={}", id);
                         return;
                 }
 
-                LocalDateTime inicio = agora();
-                int numeroTentativa = envio.getTentativas() + 1;
-                envio.setTentativas(numeroTentativa);
-                envio.setUltimaTentativaEm(inicio);
-
-                ResultadoTentativaEnvioAviso resultado;
+                boolean confirmado = false;
                 String detalheErro = null;
                 try {
-                        botWhatsappService.enviar(envio);
-                        resultado = ResultadoTentativaEnvioAviso.CONFIRMADO_PELO_BOT;
-                        envio.setStatus(StatusEnvioAviso.ENVIADO);
-                        envio.setEnviadoEm(agora());
-                        envio.setUltimoErro(null);
-                        log.info("[SICE-AVISOS] Bot confirmou: envio={} tentativa={}",
-                                        envio.getId(), numeroTentativa);
+                        botWhatsappService.enviar(reserva.mensagem());
+                        confirmado = true;
                 } catch (Exception exception) {
-                        // Excecao HTTP nao comprova que o WhatsApp nao recebeu a mensagem.
-                        resultado = ResultadoTentativaEnvioAviso.SEM_CONFIRMACAO;
-                        detalheErro = limitarErro(exception.getMessage());
-                        envio.setUltimoErro(detalheErro);
-                        log.warn("[SICE-AVISOS] Sem confirmacao do bot: envio={} tentativa={} motivo={}",
-                                        envio.getId(), numeroTentativa, detalheErro);
-                        if (numeroTentativa >= 3) {
-                                envio.setStatus(StatusEnvioAviso.ERRO);
+                        // Falha HTTP pode significar resultado desconhecido no WhatsApp.
+                        detalheErro = exception.getMessage();
+                        log.warn("[SICE-AVISOS] Bot sem confirmacao: envio={} tentativa={} causa={}",
+                                id, reserva.numeroTentativa(), detalheErro);
+                }
+                // Nova transacao curta. Falha aqui NAO provoca nova chamada ao bot.
+                processamentoTransacional.concluir(reserva, confirmado, detalheErro);
+        }
+
+        /** Seleciona somente IDs, sem reter transacao JPA durante as chamadas ao bot. */
+        public void processarEnviosPendentesDoEvento(Long eventoId) {
+                List<Long> ids = envioAvisoRepository.buscarIdsDoEventoPorStatus(
+                                eventoId, StatusEnvioAviso.PENDENTE);
+                for (Long envioId : ids) {
+                        try {
+                                processarEnvioPorId(envioId);
+                        } catch (Exception ex) {
+                                log.error("[SICE-AVISOS] Erro ao processar envio={}. "
+                                        + "Se havia reserva, sera recuperada como resultado incerto.", envioId, ex);
                         }
                 }
-
-                tentativaEnvioAvisoRepository.save(new TentativaEnvioAviso(
-                                envio, numeroTentativa, inicio, agora(), resultado, detalheErro));
-                envioAvisoRepository.save(envio);
         }
 
-        private boolean podeProcessar(EnvioAviso envio) {
-                if (envio.getStatus() != StatusEnvioAviso.PENDENTE
-                                || envio.getTentativas() >= 3
-                                || envio.getEvento().getStatus() != StatusEvento.ATIVO
-                                || !envio.getGrupoWhatsapp().isAtivo()) {
-                        return false;
-                }
-
-                // O agendador de testes pode rodar a cada 10 segundos; nunca
-                // consumir as tres tentativas em sequencia sem intervalo.
-                if (envio.getTentativas() > 0
-                                && envio.getUltimaTentativaEm() != null
-                                && envio.getUltimaTentativaEm().isAfter(agora().minusHours(1))) {
-                        log.debug("[SICE-AVISOS] Aguardando intervalo de 1 hora: envio={} ultimaTentativa={}",
-                                        envio.getId(), envio.getUltimaTentativaEm());
-                        return false;
-                }
-
-                LocalDate hoje = LocalDate.now(ZoneId.of("America/Sao_Paulo"));
-                return !envio.getEvento().getDataAviso().isAfter(hoje)
-                                && !envio.getEvento().getDataInicio().isBefore(hoje);
-        }
-
-        private LocalDateTime agora() {
-                return LocalDateTime.now(ZoneId.of("America/Sao_Paulo"));
-        }
-
-        private String limitarErro(String mensagem) {
-                String texto = mensagem == null || mensagem.isBlank()
-                                ? "Falha sem mensagem retornada pelo serviço de envio."
-                                : mensagem;
-                return texto.length() <= 500 ? texto : texto.substring(0, 500);
-        }
-
-        @Transactional
-        public void processarEnvioPorId(Long id) {
-
-                EnvioAviso envio = envioAvisoRepository
-                                .findById(id)
-                                .orElseThrow();
-
-                processarEnvio(envio);
-        }
-
-        @Transactional
-        public void processarEnviosPendentesDoEvento(
-                        Long eventoId) {
-
-                List<EnvioAviso> envios = envioAvisoRepository
-                                .findByEventoIdAndStatus(
-                                                eventoId,
-                                                StatusEnvioAviso.PENDENTE);
-
-                for (EnvioAviso envio : envios) {
-
-                        processarEnvio(envio);
-                }
-        }
-
-        private Set<GrupoWhatsapp> resolverGrupos(
-                        Evento evento) {
-
-                Set<GrupoWhatsapp> grupos = new HashSet<>();
-
-                for (EventoDestino destino : evento.getDestinos()) {
-
-                        if (destino.getPerfil() == PerfilUsuario.PROFESSOR) {
-
-                                grupoWhatsappRepository
-                                                .findByTipoAndAtivoTrue(
-                                                                TipoGrupo.GERAL_PROFESSORES)
-                                                .ifPresent(grupos::add);
-
-                                continue;
+        /** Processo agendado para tratar reservas abandonadas por queda do servidor. */
+        public void recuperarReservasExpiradas() {
+                java.time.LocalDateTime limite = java.time.LocalDateTime.now(
+                                ZoneId.of("America/Sao_Paulo")).minusMinutes(15);
+                for (Long id : envioAvisoRepository.buscarReservasExpiradas(limite)) {
+                        try {
+                                processamentoTransacional.interromperReservaExpirada(id, limite);
+                        } catch (Exception ex) {
+                                log.error("[SICE-AVISOS] Falha ao verificar reserva expirada: envio={}", id, ex);
                         }
-
-                        if (destino.getPerfil() == PerfilUsuario.ALUNO) {
-
-                                resolverGruposAlunos(
-                                                destino,
-                                                grupos);
-                        }
-                }
-
-                return grupos;
-        }
-
-        private void resolverGruposAlunos(
-                        EventoDestino destino,
-                        Set<GrupoWhatsapp> grupos) {
-
-                if (destino.getDestinacoesTurma()
-                                .isEmpty()) {
-
-                        grupoWhatsappRepository
-                                        .findByTipoAndAtivoTrue(
-                                                        TipoGrupo.GERAL_ALUNOS)
-                                        .ifPresent(grupos::add);
-
-                        return;
-                }
-
-                for (EventoDestinoTurma destinacao : destino.getDestinacoesTurma()) {
-
-                        Long turmaId = destinacao
-                                        .getTurma()
-                                        .getId();
-
-                        grupoWhatsappRepository
-                                        .findByTurmaIdAndAtivoTrue(
-                                                        turmaId)
-                                        .ifPresent(grupos::add);
                 }
         }
 
         @Transactional
         public void sincronizarAposEdicao(Evento evento, boolean dataAlterada) {
-                Set<GrupoWhatsapp> gruposAtuais = resolverGrupos(evento);
+                Set<GrupoWhatsapp> gruposAtuais = resolverGruposAvisoService.resolver(evento).grupos();
                 List<EnvioAviso> enviosExistentes = envioAvisoRepository.findByEventoId(evento.getId());
                 Set<Long> idsAtuais = gruposAtuais.stream()
                                 .map(GrupoWhatsapp::getId)
@@ -252,12 +137,14 @@ public class EnvioAvisoService {
                         boolean removido = !idsAtuais.contains(envio.getGrupoWhatsapp().getId());
                         if (removido) {
                                 // Nao apaga o registro ou o historico de tentativas.
-                                if (envio.getStatus() == StatusEnvioAviso.PENDENTE) {
+                                if (envio.getStatus() == StatusEnvioAviso.PENDENTE
+                                                && envio.getProcessandoDesde() == null) {
                                         envio.setStatus(StatusEnvioAviso.CANCELADO);
                                 }
                                 continue;
                         }
                         if (dataAlterada && envio.getStatus() == StatusEnvioAviso.PENDENTE
+                                        && envio.getProcessandoDesde() == null
                                         && envio.getTentativas() > 0) {
                                 // Nao usar tentativas do aviso antigo para enviar novos dados.
                                 envio.setStatus(StatusEnvioAviso.CANCELADO);
@@ -296,8 +183,9 @@ public class EnvioAvisoService {
 
                 criarEnviosParaEvento(evento);
 
-                processarEnviosPendentesDoEvento(
-                                evento.getId());
+                // EventoService pode estar no meio de um @Transactional.
+                // O listener disparara SOMENTE depois do commit bem-sucedido.
+                eventPublisher.publishEvent(new EnviosImediatosEvent(evento.getId()));
         }
 
 }

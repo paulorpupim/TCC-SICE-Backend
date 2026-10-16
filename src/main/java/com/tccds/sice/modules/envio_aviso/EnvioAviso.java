@@ -60,6 +60,12 @@ public class EnvioAviso {
 
     private LocalDateTime enviadoEm;
 
+    @Column(name = "processando_desde")
+    private LocalDateTime processandoDesde;
+
+    @Column(name = "reserva_token", length = 36)
+    private String reservaToken;
+
     @Column(length = 500)
     private String ultimoErro;
 

@@ -23,6 +23,7 @@ import com.tccds.sice.exception.SenhaInvalidaException;
 import com.tccds.sice.modules.usuario.dto.AlterarSenhaDTO;
 import com.tccds.sice.modules.usuario.dto.CriarUsuarioDTO;
 import com.tccds.sice.modules.usuario.dto.EditarUsuarioDTO;
+import com.tccds.sice.modules.usuario.dto.RedefinirSenhaUsuarioDTO;
 import com.tccds.sice.modules.usuario.dto.UsuarioResponseDTO;
 
 import jakarta.validation.Valid;
@@ -75,6 +76,16 @@ public class UsuarioController {
             @RequestBody AlterarStatusDTO dados) {
         usuarioService.alterarStatus(id, dados.ativo());
 
+        return ResponseEntity.noContent().build();
+    }
+
+    /** Somente ADMIN pode definir uma nova senha provisória para outro usuário. */
+    @PatchMapping("/{id}/redefinir-senha")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> redefinirSenha(
+            @PathVariable Long id,
+            @Valid @RequestBody RedefinirSenhaUsuarioDTO dto) {
+        usuarioService.redefinirSenha(id, dto);
         return ResponseEntity.noContent().build();
     }
 
