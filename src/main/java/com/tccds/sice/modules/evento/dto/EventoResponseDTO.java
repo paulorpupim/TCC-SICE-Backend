@@ -18,7 +18,8 @@ public record EventoResponseDTO(
         LocalDate dataAviso,
         StatusEvento status,
         Set<EventoDestinoResponseDTO> destinos,
-        Long criadoPor
+        Long criadoPor,
+        String criadoPorNome
 ) {
 
     public EventoResponseDTO(Evento evento) {
@@ -34,7 +35,8 @@ public record EventoResponseDTO(
                         .stream()
                         .map(EventoDestinoResponseDTO::new)
                         .collect(Collectors.toSet()),
-                evento.getCriadoPor().getId()
+                evento.getCriadoPor().getId(),
+                evento.getCriadoPor().getNome()
         );
     }
 }
