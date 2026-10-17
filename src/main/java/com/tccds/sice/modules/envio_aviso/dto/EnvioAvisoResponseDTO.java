@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+import com.tccds.sice.modules.bot_whatsapp.InterpretadorErroBot;
+import com.tccds.sice.modules.bot_whatsapp.dto.DiagnosticoErroBotDTO;
 import com.tccds.sice.enums.StatusEnvioAviso;
 import com.tccds.sice.enums.StatusEvento;
 import com.tccds.sice.enums.TipoGrupo;
@@ -25,7 +27,8 @@ public record EnvioAvisoResponseDTO(
         Integer tentativas,
         LocalDateTime ultimaTentativaEm,
         LocalDateTime enviadoEm,
-        String ultimoErro
+        String ultimoErro,
+        DiagnosticoErroBotDTO diagnosticoErro
 ) {
     public EnvioAvisoResponseDTO(EnvioAviso envio) {
         this(
@@ -44,7 +47,8 @@ public record EnvioAvisoResponseDTO(
                 envio.getTentativas(),
                 envio.getUltimaTentativaEm(),
                 envio.getEnviadoEm(),
-                envio.getUltimoErro()
+                envio.getUltimoErro(),
+                InterpretadorErroBot.interpretar(envio.getUltimoErro())
         );
     }
 }

@@ -17,6 +17,8 @@ import com.tccds.sice.modules.aluno.Aluno;
 import com.tccds.sice.modules.aluno.AlunoRepository;
 import com.tccds.sice.modules.aluno.matricula.Matricula;
 import com.tccds.sice.modules.envio_aviso.EnvioAvisoService;
+import com.tccds.sice.modules.envio_aviso.EnvioAvisoRepository;
+import com.tccds.sice.modules.envio_aviso.EnvioAviso;
 import com.tccds.sice.modules.cancelamento_aviso.ComunicacaoCancelamentoRepository;
 import com.tccds.sice.modules.evento.dto.CriarEventoDTO;
 import com.tccds.sice.modules.evento.dto.EditarEventoDTO;
@@ -40,6 +42,7 @@ public class EventoService {
 
         private final UsuarioService usuarioService;
         private final EnvioAvisoService envioAvisoService;
+        private final EnvioAvisoRepository envioAvisoRepository;
         private final ComunicacaoCancelamentoRepository cancelamentoRepository;
 
         public Evento buscarEventoId(Long id) {
@@ -110,8 +113,9 @@ public class EventoService {
                 validarDestinos(dto.destinos());
                 validarDataEvento(dto.dataInicio());
 
-                Evento evento = buscarEventoId(id);
-
+                // Mesmo bloqueio usado na criacao de avisos, cancelamento e exclusao.
+                Evento evento = eventoRepository.buscarParaCancelamento(id)
+                                .orElseThrow(() -> new EntidadeNaoEncontradaException("Evento não encontrado"));
                 LocalDate dataAnterior = evento.getDataInicio();
 
                 evento.setTitulo(dto.titulo());
@@ -172,48 +176,41 @@ public class EventoService {
                                         "Apenas eventos ativos podem ser cancelados.");
                 }
 
+                // Impede cancelamento enquanto uma tentativa original ainda esta em processamento.
+                // Mantem a mesma ordem de locks de cancelar-com-aviso (Evento -> Envios).
+                List<EnvioAviso> envios = envioAvisoRepository.findByEventoIdOrderByIdAsc(id)
+                                .stream()
+                                .map(envio -> envioAvisoRepository.buscarParaReserva(envio.getId()).orElseThrow())
+                                .toList();
+                if (envios.stream().anyMatch(envio -> envio.getProcessandoDesde() != null)) {
+                        throw new RegraNegocioEventoException(
+                                        "Existe aviso original em processamento. Tente cancelar novamente após sua conclusão.");
+                }
+
                 evento.setStatus(StatusEvento.CANCELADO);
 
                 return new EventoResponseDTO(evento);
         }
 
+        /**
+         * Exclusao fisica somente enquanto nao houve registro de aviso.
+         * O agendador adquire o mesmo lock no Evento ANTES de criar EnvioAviso.
+         * O cascade da entidade remove os destinos (nao o historico de comunicacoes).
+         */
         @Transactional
-        public EventoResponseDTO reativar(Long id) {
-
+        public void excluir(Long id) {
                 Evento evento = eventoRepository.buscarParaCancelamento(id)
                                 .orElseThrow(() -> new EntidadeNaoEncontradaException("Evento não encontrado"));
 
-                validarReativacao(evento);
-                if (cancelamentoRepository.existsByEventoId(id)) {
+                if (envioAvisoRepository.existsByEventoId(id)
+                                || cancelamentoRepository.existsByEventoId(id)) {
                         throw new RegraNegocioEventoException(
-                                "Este cancelamento ja possui comunicacoes registradas; reativacao requer uma nova politica de aviso.");
+                                        "Este evento possui registros de avisos ou de cancelamento. "
+                                        + "Para preservar o histórico, cancele o evento em vez de excluí-lo.");
                 }
 
-                evento.setStatus(StatusEvento.ATIVO);
-
-                envioAvisoService
-                                .processarSeDataAvisoChegou(evento);
-
-                return new EventoResponseDTO(evento);
-        }
-
-        @Transactional
-        public EventoResponseDTO desativar(Long id) {
-
-                Evento evento = eventoRepository.buscarParaCancelamento(id)
-                                .orElseThrow(() -> new EntidadeNaoEncontradaException("Evento não encontrado"));
-
-                if (evento.getStatus() == StatusEvento.DESATIVADO) {
-                        return new EventoResponseDTO(evento);
-                }
-
-                if (cancelamentoRepository.existsByEventoId(id)) {
-                        throw new RegraNegocioEventoException(
-                                "Evento com comunicacao de cancelamento nao pode ser desativado nesta etapa.");
-                }
-                evento.setStatus(StatusEvento.DESATIVADO);
-
-                return new EventoResponseDTO(evento);
+                eventoRepository.delete(evento);
+                eventoRepository.flush();
         }
 
         @Transactional(readOnly = true)
@@ -377,15 +374,5 @@ public class EventoService {
                 }
         }
 
-        private void validarReativacao(Evento evento) {
-
-                LocalDate hoje = LocalDate.now(
-                                ZoneId.of("America/Sao_Paulo"));
-
-                if (evento.getDataInicio().isBefore(hoje)) {
-                        throw new RegraNegocioEventoException(
-                                        "Não é possível reativar um evento que já ocorreu.");
-                }
-        }
 
 }

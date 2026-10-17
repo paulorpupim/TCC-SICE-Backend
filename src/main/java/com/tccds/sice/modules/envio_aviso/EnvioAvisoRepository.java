@@ -108,6 +108,8 @@ public interface EnvioAvisoRepository extends JpaRepository<EnvioAviso, Long> {
         @Query("SELECT envio.id FROM EnvioAviso envio WHERE envio.processandoDesde IS NOT NULL AND envio.processandoDesde <= :limite")
         List<Long> buscarReservasExpiradas(@Param("limite") LocalDateTime limite);
 
+        boolean existsByEventoId(Long eventoId);
+
         boolean existsByEventoIdAndGrupoWhatsappId(Long eventoId, Long grupoWhatsappId);
 
         List<EnvioAviso> findByEventoIdAndStatus(Long eventoId, StatusEnvioAviso status);

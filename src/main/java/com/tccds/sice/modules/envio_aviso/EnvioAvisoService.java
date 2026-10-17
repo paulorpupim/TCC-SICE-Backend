@@ -34,9 +34,13 @@ public class EnvioAvisoService {
 
         @Transactional
         public void criarEnviosParaEvento(Evento evento) {
-                // O agendador pode ter obtido um Evento fora da transacao.
-                // Recarrega-lo aqui permite acessar destinos LAZY com seguranca.
-                evento = eventoRepository.findById(evento.getId()).orElseThrow();
+                // Serializa a criacao de registros com a exclusao/cancelamento de eventos.
+                // Um evento listado pelo scheduler pode ter sido excluido antes de chegar aqui.
+                evento = eventoRepository.buscarParaCancelamento(evento.getId()).orElse(null);
+                if (evento == null) {
+                        log.debug("[SICE-AVISOS] Evento excluido antes de criar avisos.");
+                        return;
+                }
 
                 if (evento.getStatus() != StatusEvento.ATIVO) {
                         log.debug("[SICE-AVISOS] Nao cria envios: evento={} status={}",
@@ -151,12 +155,21 @@ public class EnvioAvisoService {
                         }
                 }
 
+                // Edicao antes da data de aviso nao cria registros apenas por alterar destinos.
+                // Registros ja existentes (historicos ou pendentes) continuam sincronizados.
+                LocalDate hoje = LocalDate.now(ZoneId.of("America/Sao_Paulo"));
+                boolean avisoElegivel = evento.getStatus() == StatusEvento.ATIVO
+                                && !evento.getDataAviso().isAfter(hoje)
+                                && !evento.getDataInicio().isBefore(hoje);
                 for (GrupoWhatsapp grupo : gruposAtuais) {
                         EnvioAviso existente = enviosExistentes.stream()
                                         .filter(e -> e.getGrupoWhatsapp().getId().equals(grupo.getId()))
                                         .findFirst().orElse(null);
                         if (existente == null) {
-                                envioAvisoRepository.save(new EnvioAviso(evento, grupo));
+                                // Sem registro anterior, so criar se ja estiver no periodo de aviso.
+                                if (avisoElegivel) {
+                                        envioAvisoRepository.save(new EnvioAviso(evento, grupo));
+                                }
                         } else if (existente.getStatus() == StatusEnvioAviso.CANCELADO
                                         && existente.getTentativas() == 0) {
                                 // Reabilita o envio nunca tentado se o grupo foi readicionado.

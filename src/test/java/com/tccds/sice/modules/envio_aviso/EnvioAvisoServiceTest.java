@@ -94,10 +94,31 @@ class EnvioAvisoServiceTest {
     @Test
     void eventoElegivelPublicaEventoParaDepoisDoCommit() {
         Evento evento = eventoElegivel();
-        when(eventos.findById(10L)).thenReturn(Optional.of(evento));
+        when(eventos.buscarParaCancelamento(10L)).thenReturn(Optional.of(evento));
         service.processarSeDataAvisoChegou(evento);
         verify(publisher).publishEvent(new EnviosImediatosEvent(10L));
         verify(bot, never()).enviar(any(EnviarAvisoBotDTO.class));
+    }
+
+    @Test
+    void agendadorNaoCriaAvisoSeEventoFoiExcluidoEntreListagemEProcessamento() {
+        Evento evento = eventoElegivel();
+        // buscarParaCancelamento retorna Optional.empty() em vez de lançar exceção.
+        service.criarEnviosParaEvento(evento);
+        verify(eventos).buscarParaCancelamento(10L);
+        verify(envios, never()).save(any(EnvioAviso.class));
+        verifyNoInteractions(grupos);
+    }
+
+    @Test
+    void criacaoDeAvisosConfereBloqueioDoEventoAntesDeResolverGrupos() {
+        Evento evento = eventoElegivel();
+        when(eventos.buscarParaCancelamento(10L)).thenReturn(Optional.of(evento));
+        service.criarEnviosParaEvento(evento);
+        var ordem = inOrder(eventos, grupos);
+        ordem.verify(eventos).buscarParaCancelamento(10L);
+        // Sem destinos, o resolvedor nao consulta grupos. Ainda assim, o bloqueio ocorreu primeiro.
+        verify(envios, never()).save(any(EnvioAviso.class));
     }
 
     @Test
@@ -118,6 +139,31 @@ class EnvioAvisoServiceTest {
         service.sincronizarAposEdicao(evento, false);
         assertEquals(StatusEnvioAviso.CANCELADO, envio.getStatus());
         verify(envios, never()).delete(any(EnvioAviso.class));
+    }
+
+    @Test
+    void edicaoAntecipadaNaoCriaRegistroDeEnvio() {
+        Evento evento = eventoElegivel();
+        evento.setDataAviso(LocalDate.now(ZONA).plusDays(1));
+        GrupoWhatsapp grupo = new GrupoWhatsapp("Alunos", "grupo@g.us", TipoGrupo.GERAL_ALUNOS, null);
+        grupo.setId(21L);
+        evento.adicionarDestino(new com.tccds.sice.modules.evento.evento_destino.EventoDestino(
+                com.tccds.sice.enums.PerfilUsuario.ALUNO, java.util.Set.of(), java.util.Set.of()));
+        when(grupos.findByTipoAndAtivoTrue(TipoGrupo.GERAL_ALUNOS)).thenReturn(Optional.of(grupo));
+        service.sincronizarAposEdicao(evento, false);
+        verify(envios, never()).save(any(EnvioAviso.class));
+    }
+
+    @Test
+    void edicaoNaDataDeAvisoPodeCriarRegistroDeEnvio() {
+        Evento evento = eventoElegivel();
+        GrupoWhatsapp grupo = new GrupoWhatsapp("Alunos", "grupo@g.us", TipoGrupo.GERAL_ALUNOS, null);
+        grupo.setId(21L);
+        evento.adicionarDestino(new com.tccds.sice.modules.evento.evento_destino.EventoDestino(
+                com.tccds.sice.enums.PerfilUsuario.ALUNO, java.util.Set.of(), java.util.Set.of()));
+        when(grupos.findByTipoAndAtivoTrue(TipoGrupo.GERAL_ALUNOS)).thenReturn(Optional.of(grupo));
+        service.sincronizarAposEdicao(evento, false);
+        verify(envios).save(any(EnvioAviso.class));
     }
 
     private Evento eventoElegivel() {

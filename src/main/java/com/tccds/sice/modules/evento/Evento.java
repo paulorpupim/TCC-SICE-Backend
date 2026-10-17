@@ -65,7 +65,7 @@ public class Evento {
     @Column(nullable = false, updatable = false)
     @CreationTimestamp
     private LocalDateTime criadoEm;
-
+    
     @UpdateTimestamp
     private LocalDateTime atualizadoEm; // LEMBRAR DE EXCLUIR ISSO SE N FOR NECESSÁRIO PAULO
 

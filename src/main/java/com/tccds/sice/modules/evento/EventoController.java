@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -99,17 +100,10 @@ public class EventoController {
     }
 
     @PreAuthorize("hasAnyRole('SECRETARIA', 'ADMIN')")
-    @PatchMapping("/{id}/desativar")
-    public EventoResponseDTO desativar(
-            @PathVariable Long id) {
-        return eventoService.desativar(id);
-    }
-
-    @PreAuthorize("hasAnyRole('SECRETARIA', 'ADMIN')")
-    @PatchMapping("/{id}/reativar")
-    public EventoResponseDTO reativar(
-            @PathVariable Long id) {
-        return eventoService.reativar(id);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> excluir(@PathVariable Long id) {
+        eventoService.excluir(id);
+        return ResponseEntity.noContent().build();
     }
 
 }
