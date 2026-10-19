@@ -24,11 +24,10 @@ public class AuthService {
 
         public LoginResult login(LoginRequestDTO request) {
 
-                Authentication authenticationRequest = UsernamePasswordAuthenticationToken
-                                .unauthenticated(
-                                                request.identificador(),
-                                                request.senha());
-
+                Authentication authenticationRequest = UsernamePasswordAuthenticationToken.unauthenticated(
+                                request.identificador(),
+                                request.senha());       
+                                                //Objeto responsavel pela autenticação de usuário, por isso recebeu o identificador e a senha
                 Authentication authentication = authenticationManager.authenticate(
                                 authenticationRequest);
 
@@ -46,8 +45,7 @@ public class AuthService {
 
         public LoginResponseDTO me(String identificador) {
 
-                Usuario usuario = usuarioRepository
-                                .findByCredencial_Identificador(identificador)
+                Usuario usuario = usuarioRepository.findByCredencial_Identificador(identificador)
                                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
                 return new LoginResponseDTO(

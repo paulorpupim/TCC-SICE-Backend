@@ -20,62 +20,42 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TokenService {
 
-    private final JwtEncoder jwtEncoder;
+        private final JwtEncoder jwtEncoder;
 
-    @Value("${security.jwt.expiration-seconds}")
-    private long expirationSeconds;
+        @Value("${security.jwt.expiration-seconds}")
+        private long expirationSeconds;
 
+        public String gerarToken(Usuario usuario) {
 
-    public String gerarToken(
-            Usuario usuario
-    ) {
+                Instant agora = Instant.now();
 
-        Instant agora =
-                Instant.now();
+                JwtClaimsSet claims = JwtClaimsSet.builder()
+                                //Quem é o dono do token
+                                .subject(usuario.getCredencial().getIdentificador())
 
-        JwtClaimsSet claims =
-                JwtClaimsSet.builder()
+                                //Quando foi criado
+                                .issuedAt(agora)
 
-                        .subject(
-                                usuario
-                                        .getCredencial()
-                                        .getIdentificador()
-                        )
+                                //Quando vai expirar
+                                .expiresAt(agora.plus(
+                                                expirationSeconds,
+                                                ChronoUnit.SECONDS))
 
-                        .issuedAt(agora)
-
-                        .expiresAt(
-                                agora.plus(
-                                        expirationSeconds,
-                                        ChronoUnit.SECONDS
-                                )
-                        )
-
-                        .claim(
-                                "roles",
-                                List.of(
-                                        usuario
+                                //Quais são as roles do usuário
+                                .claim("roles", List.of(usuario
                                                 .getPerfil()
-                                                .name()
-                                )
-                        )
+                                                .name()))
 
-                        .build();
+                                .build();
 
+                JwsHeader header = JwsHeader
+                                .with(MacAlgorithm.HS256)
+                                .build();
 
-        JwsHeader header =
-                JwsHeader
-                        .with(MacAlgorithm.HS256)
-                        .build();
-
-
-        return jwtEncoder
-                .encode(
-                        JwtEncoderParameters.from(
-                                header,
-                                claims
-                        )
-                )
-                .getTokenValue();
-    }
+                return jwtEncoder.encode(
+                                JwtEncoderParameters.from(
+                                                header,
+                                                claims))
+                                .getTokenValue();
+        }
 }

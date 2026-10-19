@@ -26,16 +26,23 @@ public class AuthController {
 
         @PostMapping("/login")
         public ResponseEntity<LoginResponseDTO> login(
+                        //O requestbody basicamente fala para o spring converter o JSON em uma classe java (No caso em uma LoginRequestDTO)
                         @RequestBody LoginRequestDTO request) {
 
                 LoginResult result = authService.login(request);
 
                 ResponseCookie cookie = ResponseCookie
+                                //Nome do cookie que contem o JWT
                                 .from("token", result.token())
+                                //Impede que scripts JavaScript leiam o cookie diretamente
                                 .httpOnly(true)
+                                //Permite o funcionamento com HTTP (Desenvolvimento), ao colocar em true, só aceita HTTPS
                                 .secure(false)
+                                //Restringe situações em que o navegador envia o cookie em requisições entre sites
                                 .sameSite("Lax")
+                                //Basicamente permite enviar o cookie pelos caminhos da aplicação
                                 .path("/")
+                                //Define o tempo de duração do token
                                 .maxAge(60 * 60) // Idealmente colocar o tempo de expiração do token jwt
                                 .build();
 
@@ -60,6 +67,7 @@ public class AuthController {
                                 .secure(false)
                                 .sameSite("Lax")
                                 .path("/")
+                                //Basicamente diz q aquele token não tem mais validade, e encerra a sessão do usuario
                                 .maxAge(0)
                                 .build();
 

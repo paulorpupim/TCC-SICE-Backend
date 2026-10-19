@@ -46,7 +46,6 @@ public class SecurityConfig {
 
         @Bean
         public PasswordEncoder passwordEncoder() {
-
                 return new BCryptPasswordEncoder();
         }
 
@@ -118,7 +117,6 @@ public class SecurityConfig {
         public BearerTokenResolver bearerTokenResolver() {
 
                 return request -> {
-
                         Cookie[] cookies = request.getCookies();
 
                         if (cookies == null) {
@@ -126,7 +124,6 @@ public class SecurityConfig {
                         }
 
                         for (Cookie cookie : cookies) {
-
                                 if ("token".equals(cookie.getName())) {
                                         return cookie.getValue();
                                 }
@@ -146,9 +143,13 @@ public class SecurityConfig {
                 http
                                 .cors(Customizer.withDefaults())
 
+                                //spa significa "Single Page Application"
                                 .csrf(csrf -> csrf.spa())
 
                                 .sessionManagement(session -> session.sessionCreationPolicy(
+                                                //(Stateless) Spring Security não depende de uma sessão HTTP
+                                                //de autenticação armazenada no servidor para reconhecer cada usuário.
+                                                //
                                                 SessionCreationPolicy.STATELESS))
 
                                 .authorizeHttpRequests(auth -> auth

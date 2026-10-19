@@ -12,26 +12,17 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class UsuarioDetailsService
-        implements UserDetailsService {
+public class UsuarioDetailsService implements UserDetailsService {
 
-    private final UsuarioRepository usuarioRepository;
+        private final UsuarioRepository usuarioRepository;
 
-    @Override
-    public UserDetails loadUserByUsername(
-            String identificador
-    ) throws UsernameNotFoundException {
+        @Override
+        public UserDetails loadUserByUsername(
+                        String identificador) throws UsernameNotFoundException {
 
-        Usuario usuario = usuarioRepository
-                .findByCredencial_Identificador(
-                        identificador
-                )
-                .orElseThrow(() ->
-                        new UsernameNotFoundException(
-                                "Usuário não encontrado"
-                        )
-                );
+                Usuario usuario = usuarioRepository.findByCredencial_Identificador(identificador)
+                                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
 
-        return new UsuarioDetails(usuario);
-    }
+                return new UsuarioDetails(usuario);
+        }
 }

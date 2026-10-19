@@ -302,11 +302,9 @@ public class UsuarioService {
                                         "A nova senha deve ser diferente da senha atual.");
                 }
 
-                String novaSenhaHash = passwordEncoder.encode(
-                                dto.novaSenha());
+                String novaSenhaHash = passwordEncoder.encode(dto.novaSenha());
 
-                credencial.setSenhaHash(
-                                novaSenhaHash);
+                credencial.setSenhaHash(novaSenhaHash);
 
                 if (credencial.isPrimeiroAcesso()) {
 

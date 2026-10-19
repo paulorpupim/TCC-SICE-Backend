@@ -15,6 +15,7 @@ import com.tccds.sice.enums.StatusEvento;
 
 public interface EventoRepository extends JpaRepository<Evento, Long> {
 
+        //O PESSIMISTIC_WRITE solicita um bloqueio de escrita sobre a linha do evento enquanto a transação estiver aberta.
         @Lock(LockModeType.PESSIMISTIC_WRITE)
         @Query("SELECT e FROM Evento e WHERE e.id = :id")
         Optional<Evento> buscarParaCancelamento(@Param("id") Long id);

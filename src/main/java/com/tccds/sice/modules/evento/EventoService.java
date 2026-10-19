@@ -268,8 +268,7 @@ public class EventoService {
                 return List.of();
         }
 
-        private void validarDestinos(
-                        Set<CriarEventoDestinoDTO> destinos) {
+        private void validarDestinos(Set<CriarEventoDestinoDTO> destinos) {
 
                 Set<PerfilUsuario> perfis = new HashSet<>();
 
