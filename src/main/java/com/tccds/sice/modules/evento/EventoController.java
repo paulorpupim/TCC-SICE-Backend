@@ -20,12 +20,12 @@ import com.tccds.sice.modules.evento.dto.EditarEventoDTO;
 import com.tccds.sice.modules.evento.dto.EventoResponseDTO;
 import com.tccds.sice.modules.evento.dto.VerificarGruposEventoDTO;
 import com.tccds.sice.modules.evento.dto.ResultadoVerificacaoGruposDTO;
-import com.tccds.sice.modules.envio_aviso.ResolverGruposAvisoService;
+import com.tccds.sice.modules.comunicacao_cancelamento.dto.CancelamentoComAvisoResponseDTO;
+import com.tccds.sice.modules.comunicacao_cancelamento.service.ComunicacaoCancelamentoService;
+import com.tccds.sice.modules.envio_aviso.service.ResolverGruposAvisoService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import com.tccds.sice.modules.cancelamento_aviso.ComunicacaoCancelamentoService;
-import com.tccds.sice.modules.cancelamento_aviso.dto.CancelamentoComAvisoResponseDTO;
 
 @RestController
 @RequestMapping("/eventos")

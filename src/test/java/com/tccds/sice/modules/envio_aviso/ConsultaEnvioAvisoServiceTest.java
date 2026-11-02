@@ -17,7 +17,9 @@ import org.springframework.data.domain.Pageable;
 
 import com.tccds.sice.enums.StatusEnvioAviso;
 import com.tccds.sice.exception.EntidadeNaoEncontradaException;
-import com.tccds.sice.modules.envio_aviso.tentativa_envio_aviso.TentativaEnvioAvisoRepository;
+import com.tccds.sice.modules.envio_aviso._tentativa_envio_aviso.TentativaEnvioAvisoRepository;
+import com.tccds.sice.modules.envio_aviso.repository.EnvioAvisoRepository;
+import com.tccds.sice.modules.envio_aviso.service.ConsultaEnvioAvisoService;
 
 @ExtendWith(MockitoExtension.class)
 class ConsultaEnvioAvisoServiceTest {

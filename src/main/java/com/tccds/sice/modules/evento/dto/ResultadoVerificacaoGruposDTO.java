@@ -2,8 +2,8 @@ package com.tccds.sice.modules.evento.dto;
 
 import java.util.List;
 
-import com.tccds.sice.modules.envio_aviso.ResolverGruposAvisoService;
-import com.tccds.sice.modules.envio_aviso.ResolverGruposAvisoService.DestinoSemGrupo;
+import com.tccds.sice.modules.envio_aviso.service.ResolverGruposAvisoService;
+import com.tccds.sice.modules.envio_aviso.service.ResolverGruposAvisoService.DestinoSemGrupo;
 
 public record ResultadoVerificacaoGruposDTO(
     int totalGruposAtivos,

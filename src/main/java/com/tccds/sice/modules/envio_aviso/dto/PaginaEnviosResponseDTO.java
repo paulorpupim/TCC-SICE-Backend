@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.springframework.data.domain.Page;
 
-import com.tccds.sice.modules.envio_aviso.EnvioAviso;
+import com.tccds.sice.modules.envio_aviso.entity.EnvioAviso;
 
 /** Paginação com contrato estável para o React. */
 public record PaginaEnviosResponseDTO(

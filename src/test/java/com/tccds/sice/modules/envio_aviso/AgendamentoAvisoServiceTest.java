@@ -15,6 +15,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.tccds.sice.enums.StatusEnvioAviso;
 import com.tccds.sice.enums.StatusEvento;
+import com.tccds.sice.modules.envio_aviso.repository.EnvioAvisoRepository;
+import com.tccds.sice.modules.envio_aviso.service.AgendamentoAvisoService;
+import com.tccds.sice.modules.envio_aviso.service.EnvioAvisoService;
 import com.tccds.sice.modules.evento.Evento;
 import com.tccds.sice.modules.evento.EventoRepository;
 

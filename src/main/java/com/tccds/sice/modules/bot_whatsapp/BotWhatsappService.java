@@ -13,7 +13,7 @@ import com.tccds.sice.enums.ModalidadeEnsino;
 import com.tccds.sice.enums.PerfilUsuario;
 import com.tccds.sice.enums.TipoGrupo;
 import com.tccds.sice.modules.bot_whatsapp.dto.EnviarAvisoBotDTO;
-import com.tccds.sice.modules.envio_aviso.EnvioAviso;
+import com.tccds.sice.modules.envio_aviso.entity.EnvioAviso;
 import com.tccds.sice.modules.evento.Evento;
 import com.tccds.sice.modules.evento.evento_destino.EventoDestino;
 import com.tccds.sice.modules.grupo_whatsapp.GrupoWhatsapp;

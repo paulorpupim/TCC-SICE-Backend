@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.tccds.sice.enums.Etapa;
 import com.tccds.sice.enums.PerfilUsuario;
 import com.tccds.sice.enums.TipoGrupo;
+import com.tccds.sice.modules.envio_aviso.service.ResolverGruposAvisoService;
 import com.tccds.sice.modules.evento.Evento;
 import com.tccds.sice.modules.evento.evento_destino.EventoDestino;
 import com.tccds.sice.modules.evento.evento_destino_turma.dto.CriarEventoDestinoDTO;

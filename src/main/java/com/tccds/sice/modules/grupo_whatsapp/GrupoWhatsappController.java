@@ -29,7 +29,7 @@ public class GrupoWhatsappController {
 
     private final GrupoWhatsappService grupoService;
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIA')")
     @GetMapping("/{id}")
     public ResponseEntity<GrupoWhatsappResponseDTO> buscarPorId(
             @PathVariable Long id) {
@@ -38,7 +38,7 @@ public class GrupoWhatsappController {
                 grupoService.buscarGrupoPorId(id));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIA')")
     @PostMapping("/cadastrarGrupo")
     public ResponseEntity<GrupoWhatsappResponseDTO> cadastrar(
             @Valid @RequestBody CriarGrupoWhatsappDTO dto) {
@@ -51,7 +51,7 @@ public class GrupoWhatsappController {
                 .body(grupo);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIA')")
     @PutMapping("/{id}")
     public ResponseEntity<GrupoWhatsappResponseDTO> editar(
             @PathVariable Long id,
@@ -61,7 +61,7 @@ public class GrupoWhatsappController {
                 grupoService.editar(id, dto));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIA')")
     @GetMapping("/listarGrupos")
     public ResponseEntity<List<GrupoWhatsappResponseDTO>> listar() {
 
@@ -69,7 +69,7 @@ public class GrupoWhatsappController {
                 grupoService.listarTodos());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIA')")
     @PatchMapping("/{id}/status")
     public ResponseEntity<Void> alterarStatus(
             @PathVariable Long id,

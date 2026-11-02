@@ -15,6 +15,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.tccds.sice.modules.envio_aviso.event.EnviosImediatosEvent;
+import com.tccds.sice.modules.envio_aviso.event.EnviosImediatosListener;
+import com.tccds.sice.modules.envio_aviso.service.EnvioAvisoService;
+
 @ExtendWith(MockitoExtension.class)
 class EnviosImediatosListenerTest {
     @Mock EnvioAvisoService service;

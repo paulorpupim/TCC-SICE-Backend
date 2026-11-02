@@ -44,8 +44,13 @@ import com.tccds.sice.modules.credencial.Credencial;
 import com.tccds.sice.modules.evento.Evento;
 import com.tccds.sice.modules.grupo_whatsapp.GrupoWhatsapp;
 import com.tccds.sice.modules.usuario.Usuario;
-import com.tccds.sice.modules.envio_aviso.tentativa_envio_aviso.TentativaEnvioAviso;
-import com.tccds.sice.modules.envio_aviso.tentativa_envio_aviso.TentativaEnvioAvisoRepository;
+import com.tccds.sice.modules.envio_aviso._tentativa_envio_aviso.TentativaEnvioAviso;
+import com.tccds.sice.modules.envio_aviso._tentativa_envio_aviso.TentativaEnvioAvisoRepository;
+import com.tccds.sice.modules.envio_aviso.entity.EnvioAviso;
+import com.tccds.sice.modules.envio_aviso.repository.EnvioAvisoRepository;
+import com.tccds.sice.modules.envio_aviso.service.EnvioAvisoService;
+import com.tccds.sice.modules.envio_aviso.service.ProcessamentoEnvioTransacionalService;
+import com.tccds.sice.modules.envio_aviso.service.ReservaEnvioAviso;
 
 /**
  * INTEGRACAO REAL: PostgreSQL + Spring + HTTP simulado, sem WhatsApp.

@@ -16,10 +16,10 @@ import com.tccds.sice.exception.RegraNegocioEventoException;
 import com.tccds.sice.modules.aluno.Aluno;
 import com.tccds.sice.modules.aluno.AlunoRepository;
 import com.tccds.sice.modules.aluno.matricula.Matricula;
-import com.tccds.sice.modules.envio_aviso.EnvioAvisoService;
-import com.tccds.sice.modules.envio_aviso.EnvioAvisoRepository;
-import com.tccds.sice.modules.envio_aviso.EnvioAviso;
-import com.tccds.sice.modules.cancelamento_aviso.ComunicacaoCancelamentoRepository;
+import com.tccds.sice.modules.comunicacao_cancelamento.repository.ComunicacaoCancelamentoRepository;
+import com.tccds.sice.modules.envio_aviso.entity.EnvioAviso;
+import com.tccds.sice.modules.envio_aviso.repository.EnvioAvisoRepository;
+import com.tccds.sice.modules.envio_aviso.service.EnvioAvisoService;
 import com.tccds.sice.modules.evento.dto.CriarEventoDTO;
 import com.tccds.sice.modules.evento.dto.EditarEventoDTO;
 import com.tccds.sice.modules.evento.dto.EventoResponseDTO;
@@ -82,8 +82,7 @@ public class EventoService {
                                         destinoDTO.etapas(),
                                         destinoDTO.modalidades());
 
-                        List<Turma> turmas = turmaRepository.findAllById(
-                                        destinoDTO.turmasIds());
+                        List<Turma> turmas = turmaRepository.findAllById(destinoDTO.turmasIds());
 
                         if (turmas.size() != destinoDTO.turmasIds().size()) {
 

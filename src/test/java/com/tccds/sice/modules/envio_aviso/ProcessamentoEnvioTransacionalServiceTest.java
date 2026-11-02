@@ -23,18 +23,28 @@ import com.tccds.sice.enums.StatusEvento;
 import com.tccds.sice.enums.TipoGrupo;
 import com.tccds.sice.modules.bot_whatsapp.BotWhatsappService;
 import com.tccds.sice.modules.bot_whatsapp.dto.EnviarAvisoBotDTO;
-import com.tccds.sice.modules.envio_aviso.tentativa_envio_aviso.TentativaEnvioAviso;
-import com.tccds.sice.modules.envio_aviso.tentativa_envio_aviso.TentativaEnvioAvisoRepository;
+import com.tccds.sice.modules.envio_aviso._tentativa_envio_aviso.TentativaEnvioAviso;
+import com.tccds.sice.modules.envio_aviso._tentativa_envio_aviso.TentativaEnvioAvisoRepository;
+import com.tccds.sice.modules.envio_aviso.entity.EnvioAviso;
+import com.tccds.sice.modules.envio_aviso.repository.EnvioAvisoRepository;
+import com.tccds.sice.modules.envio_aviso.service.ProcessamentoEnvioTransacionalService;
+import com.tccds.sice.modules.envio_aviso.service.ReservaEnvioAviso;
 import com.tccds.sice.modules.evento.Evento;
 import com.tccds.sice.modules.grupo_whatsapp.GrupoWhatsapp;
 
 @ExtendWith(MockitoExtension.class)
 class ProcessamentoEnvioTransacionalServiceTest {
+
     private static final ZoneId ZONA = ZoneId.of("America/Sao_Paulo");
 
-    @Mock EnvioAvisoRepository repository;
-    @Mock TentativaEnvioAvisoRepository tentativaRepository;
-    @Mock BotWhatsappService bot;
+    @Mock
+    EnvioAvisoRepository repository;
+    
+    @Mock
+    TentativaEnvioAvisoRepository tentativaRepository;
+    
+    @Mock
+    BotWhatsappService bot;
 
     private ProcessamentoEnvioTransacionalService service;
     private EnvioAviso envio;

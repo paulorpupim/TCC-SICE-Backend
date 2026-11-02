@@ -17,8 +17,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.tccds.sice.enums.ResultadoTentativaEnvioAviso;
+import com.tccds.sice.enums.StatusComunicacaoCancelamento;
 import com.tccds.sice.enums.StatusEvento;
 import com.tccds.sice.enums.TipoGrupo;
+import com.tccds.sice.modules.comunicacao_cancelamento._tentativa_comunicacao_cancelamento.TentativaComunicacaoCancelamento;
+import com.tccds.sice.modules.comunicacao_cancelamento._tentativa_comunicacao_cancelamento.TentativaComunicacaoCancelamentoRepository;
+import com.tccds.sice.modules.comunicacao_cancelamento.entity.ComunicacaoCancelamento;
+import com.tccds.sice.modules.comunicacao_cancelamento.repository.ComunicacaoCancelamentoRepository;
+import com.tccds.sice.modules.comunicacao_cancelamento.service.ComunicacaoCancelamentoTransacionalService;
 import com.tccds.sice.modules.evento.Evento;
 import com.tccds.sice.modules.grupo_whatsapp.GrupoWhatsapp;
 

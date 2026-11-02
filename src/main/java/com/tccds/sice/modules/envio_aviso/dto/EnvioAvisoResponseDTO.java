@@ -6,10 +6,10 @@ import java.time.LocalTime;
 
 import com.tccds.sice.modules.bot_whatsapp.InterpretadorErroBot;
 import com.tccds.sice.modules.bot_whatsapp.dto.DiagnosticoErroBotDTO;
+import com.tccds.sice.modules.envio_aviso.entity.EnvioAviso;
 import com.tccds.sice.enums.StatusEnvioAviso;
 import com.tccds.sice.enums.StatusEvento;
 import com.tccds.sice.enums.TipoGrupo;
-import com.tccds.sice.modules.envio_aviso.EnvioAviso;
 
 public record EnvioAvisoResponseDTO(
         Long id,
