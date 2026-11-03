@@ -29,7 +29,8 @@ import lombok.RequiredArgsConstructor;
  * Fluxo explicito: PATCH /eventos/{id}/cancelar-com-aviso.
  * O PATCH /cancelar tradicional nao envia WhatsApp e continua disponivel.
  */
-@Service @RequiredArgsConstructor
+@Service
+@RequiredArgsConstructor
 public class ComunicacaoCancelamentoService {
     private static final ZoneId ZONA = ZoneId.of("America/Sao_Paulo");
     private static final DateTimeFormatter DATA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -67,6 +68,7 @@ public class ComunicacaoCancelamentoService {
         int criados = 0;
         int gruposInativos = 0;
         LocalDateTime agora = LocalDateTime.now(ZONA);
+
         if (evento.getDataInicio().atTime(evento.getHoraInicio()).isAfter(agora)) {
             for (EnvioAviso original : originais) {
                 if (original.getStatus() != StatusEnvioAviso.ENVIADO) continue;

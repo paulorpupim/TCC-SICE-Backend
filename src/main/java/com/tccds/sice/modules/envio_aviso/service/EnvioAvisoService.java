@@ -37,9 +37,11 @@ public class EnvioAvisoService {
 
         @Transactional
         public void criarEnviosParaEvento(Evento evento) {
+
                 // Serializa a criacao de registros com a exclusao/cancelamento de eventos.
                 // Um evento listado pelo scheduler pode ter sido excluido antes de chegar aqui.
                 evento = eventoRepository.buscarParaCancelamento(evento.getId()).orElse(null);
+
                 if (evento == null) {
                         log.debug("[SICE-AVISOS] Evento excluido antes de criar avisos.");
                         return;
@@ -52,8 +54,10 @@ public class EnvioAvisoService {
                 }
 
                 Set<GrupoWhatsapp> grupos = resolverGruposAvisoService.resolver(evento).grupos();
+
                 log.debug("[SICE-AVISOS] Evento={} destinos={} grupos ATIVOS encontrados={}",
                                 evento.getId(), evento.getDestinos().size(), grupos.size());
+
                 if (grupos.isEmpty()) {
                         log.debug("[SICE-AVISOS] Nenhum grupo ativo corresponde aos destinatarios do evento={}",
                                         evento.getId());
@@ -69,6 +73,8 @@ public class EnvioAvisoService {
                         if (jaExiste) {
                                 log.debug("[SICE-AVISOS] Registro ja existe: evento={} grupo={}",
                                                 evento.getId(), grupo.getId());
+
+                                //Passa pra proxima iteração
                                 continue;
                         }
 

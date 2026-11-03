@@ -31,11 +31,14 @@ public class ComunicacaoCancelamentoTransacionalService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public ReservaComunicacaoCancelamento reservar(Long id) {
+
         ComunicacaoCancelamento c = repository.buscarParaReserva(id).orElse(null);
+
         if (c == null || c.getStatus() != StatusComunicacaoCancelamento.PENDENTE
                 || c.getProcessandoDesde() != null || c.getTentativas() != 0) {
             return null;
         }
+
         // Uma mensagem de cancelamento e permitida somente enquanto o evento
         // continua cancelado e o grupo permanece ativo.
         if (c.getEvento().getStatus() != StatusEvento.CANCELADO || !c.getGrupoWhatsapp().isAtivo()) {
@@ -43,42 +46,59 @@ public class ComunicacaoCancelamentoTransacionalService {
             c.setUltimoErro("Cancelamento nao enviado: evento ou grupo deixou de ser elegivel.");
             return null;
         }
+
         LocalDateTime agora = LocalDateTime.now(ZONA);
+
         if (!c.getEvento().getDataInicio().atTime(c.getEvento().getHoraInicio()).isAfter(agora)) {
             c.setStatus(StatusComunicacaoCancelamento.CANCELADO);
             c.setUltimoErro("Cancelamento nao enviado: horario do evento ja passou.");
             return null;
         }
+
         c.setTentativas(1);
         c.setProcessandoDesde(agora);
+
         String token = UUID.randomUUID().toString();
+        
         c.setReservaToken(token);
         return new ReservaComunicacaoCancelamento(id, token, agora,
                 new EnviarAvisoBotDTO(c.getIdentificadorGrupo(), c.getMensagem()));
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void concluir(ReservaComunicacaoCancelamento reserva, boolean confirmado, String erro) {
+    public void concluir(
+        ReservaComunicacaoCancelamento reserva,
+        boolean confirmado,
+        String erro
+    ) {
+
         ComunicacaoCancelamento c = repository.buscarParaReserva(reserva.comunicacaoId()).orElse(null);
+
         if (c == null || !reserva.token().equals(c.getReservaToken())) {
             log.warn("[SICE-CANCELAMENTO] Conclusao ignorada para reserva invalida: id={}", reserva.comunicacaoId());
             return;
         }
+
         LocalDateTime fim = LocalDateTime.now(ZONA);
+
         c.setStatus(confirmado ? StatusComunicacaoCancelamento.ENVIADO : StatusComunicacaoCancelamento.ERRO);
         c.setUltimoErro(confirmado ? null : limitar(erro));
+
         if (confirmado) c.setEnviadoEm(fim);
         tentativaRepository.save(new TentativaComunicacaoCancelamento(c, 1, reserva.iniciadaEm(), fim,
                 confirmado ? ResultadoTentativaEnvioAviso.CONFIRMADO_PELO_BOT
                           : ResultadoTentativaEnvioAviso.SEM_CONFIRMACAO,
                 confirmado ? null : limitar(erro)));
+        
         c.setProcessandoDesde(null);
         c.setReservaToken(null);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void marcarExpirada(Long id, LocalDateTime limite) {
+
         ComunicacaoCancelamento c = repository.buscarParaReserva(id).orElse(null);
+
         if (c == null || c.getProcessandoDesde() == null || c.getProcessandoDesde().isAfter(limite)) return;
         String erro = "RESULTADO INCERTO: nao ha confirmacao da mensagem de cancelamento. Nao reenviar automaticamente.";
         c.setStatus(StatusComunicacaoCancelamento.ERRO);
