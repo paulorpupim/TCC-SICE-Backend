@@ -14,7 +14,9 @@ import com.tccds.sice.enums.StatusComunicacaoCancelamento;
 public record ComunicacaoCancelamentoResponseDTO(
         Long id,
         Long eventoId,
+        String eventoTitulo,
         Long grupoId,
+        String grupoNome,
         Long envioOriginalId,
         String identificadorGrupo,
         String mensagem,
@@ -32,7 +34,9 @@ public record ComunicacaoCancelamentoResponseDTO(
         this(
                 comunicacao.getId(),
                 comunicacao.getEvento().getId(),
+                comunicacao.getEvento().getTitulo(),
                 comunicacao.getGrupoWhatsapp().getId(),
+                comunicacao.getGrupoWhatsapp().getNome(),
                 comunicacao.getEnvioOriginalId(),
                 comunicacao.getIdentificadorGrupo(),
                 comunicacao.getMensagem(),
