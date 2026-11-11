@@ -47,6 +47,7 @@ public class AuthController {
                                 .build();
 
                 LoginResponseDTO response = new LoginResponseDTO(
+                                result.nome(),
                                 result.perfil(),
                                 result.primeiroAcesso());
 

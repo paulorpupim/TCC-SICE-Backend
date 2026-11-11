@@ -39,6 +39,7 @@ public class AuthService {
 
                 return new LoginResult(
                                 token,
+                                usuario.getNome(),
                                 usuario.getPerfil(),
                                 usuario.getCredencial().isPrimeiroAcesso());
         }
@@ -49,6 +50,7 @@ public class AuthService {
                                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
                 return new LoginResponseDTO(
+                                usuario.getNome(),
                                 usuario.getPerfil(),
                                 usuario.getCredencial().isPrimeiroAcesso());
         }
